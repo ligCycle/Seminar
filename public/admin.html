@@ -92,6 +92,21 @@
     </div>
   </div>
 
+  <!-- ===== Modal ยืนยันการล้างข้อมูล ===== -->
+  <div class="modal-overlay" id="resetModal" hidden>
+    <div class="modal">
+      <div class="modal-icon">🗑️</div>
+      <h2>ล้างข้อมูลทั้งหมด?</h2>
+      <p>จะลบ<b>ผู้ลงทะเบียน</b>และ<b>แบบประเมิน</b>ทั้งหมด — การลบนี้ถาวร <b class="danger-text">กู้คืนไม่ได้</b></p>
+      <label class="modal-label">พิมพ์คำว่า <b>ลบ</b> เพื่อยืนยัน</label>
+      <input type="text" id="resetConfirmInput" placeholder="ลบ" autocomplete="off" />
+      <div class="modal-actions">
+        <button class="btn secondary auto" id="resetCancel">ยกเลิก</button>
+        <button class="btn danger auto" id="resetConfirm" disabled>ล้างข้อมูล</button>
+      </div>
+    </div>
+  </div>
+
   <script src="/js/admin.js"></script>
 </body>
 </html>

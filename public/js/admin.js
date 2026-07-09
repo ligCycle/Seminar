@@ -172,20 +172,54 @@ document.getElementById('logoutBtn').addEventListener('click', async () => {
   await fetch('/api/admin/logout', { method: 'POST' });
   window.location.reload();
 });
-document.getElementById('resetBtn').addEventListener('click', async () => {
-  // ยืนยัน 2 ชั้น กันกดพลาด — ลบถาวรกู้คืนไม่ได้
-  if (!confirm('⚠️ ล้างข้อมูลทั้งหมด?\n\nจะลบผู้ลงทะเบียนและแบบประเมินทั้งหมดถาวร กู้คืนไม่ได้')) return;
-  const typed = prompt('พิมพ์  ลบ  เพื่อยืนยันการล้างข้อมูลทั้งหมด');
-  if ((typed || '').trim() !== 'ลบ') return showMsg(dashMsg, 'ยกเลิกการล้างข้อมูล', 'error');
+// ---------- reset ผ่าน modal สวยๆ (ยืนยันด้วยการพิมพ์ "ลบ") ----------
+const resetModal = document.getElementById('resetModal');
+const resetInput = document.getElementById('resetConfirmInput');
+const resetConfirm = document.getElementById('resetConfirm');
+
+function openResetModal() {
+  resetInput.value = '';
+  resetConfirm.disabled = true;
+  resetModal.hidden = false;
+  resetInput.focus();
+}
+function closeResetModal() {
+  resetModal.hidden = true;
+}
+
+document.getElementById('resetBtn').addEventListener('click', openResetModal);
+document.getElementById('resetCancel').addEventListener('click', closeResetModal);
+// คลิกพื้นหลังนอกกล่อง = ปิด
+resetModal.addEventListener('click', (e) => { if (e.target === resetModal) closeResetModal(); });
+// กด Escape = ปิด
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !resetModal.hidden) closeResetModal(); });
+// เปิดปุ่มยืนยันเฉพาะเมื่อพิมพ์ "ลบ" ถูกต้อง
+resetInput.addEventListener('input', () => {
+  resetConfirm.disabled = resetInput.value.trim() !== 'ลบ';
+});
+resetInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !resetConfirm.disabled) resetConfirm.click();
+});
+
+resetConfirm.addEventListener('click', async () => {
+  resetConfirm.disabled = true;
+  resetConfirm.textContent = 'กำลังล้าง...';
   try {
     const res = await fetch('/api/admin/reset', { method: 'POST' });
-    if (!res.ok) return showMsg(dashMsg, 'ล้างข้อมูลไม่สำเร็จ', 'error');
+    if (!res.ok) {
+      closeResetModal();
+      return showMsg(dashMsg, 'ล้างข้อมูลไม่สำเร็จ', 'error');
+    }
     const r = await res.json();
+    closeResetModal();
     showMsg(dashMsg, `ล้างข้อมูลแล้ว: ผู้ลงทะเบียน ${r.registrants} รายการ, แบบประเมิน ${r.feedback} รายการ`, 'success');
     loadData();
     loadFeedback();
   } catch {
+    closeResetModal();
     showMsg(dashMsg, 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้', 'error');
+  } finally {
+    resetConfirm.textContent = 'ล้างข้อมูล';
   }
 });
 
