@@ -284,6 +284,22 @@ tbody tr:hover { background: var(--card-2); }
 .result-box .name { font-size: 1.4rem; font-weight: 700; margin: 8px 0; }
 .result-box .icon { font-size: 2.5rem; }
 
+/* ---------- document / policy page ---------- */
+.doc { line-height: 1.75; }
+.doc .doc-updated { color: var(--muted); font-size: 0.85rem; margin: 0 0 20px; }
+.doc h2 {
+  font-size: 1.1rem;
+  color: var(--gold-light);
+  margin: 26px 0 8px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+.doc h2:first-of-type { border-top: none; padding-top: 0; }
+.doc p { margin: 0 0 12px; }
+.doc ul { margin: 0 0 12px; padding-left: 20px; }
+.doc li { margin-bottom: 6px; }
+.doc a { color: var(--gold); }
+
 /* ---------- footer ---------- */
 .foot { text-align: center; color: var(--muted); font-size: 0.85rem; margin-top: 28px; }
 .foot .brands { color: var(--gold-light); letter-spacing: 1px; font-weight: 700; margin-bottom: 6px; }
