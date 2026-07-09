@@ -246,7 +246,11 @@ rsvpConfirm.addEventListener('click', async () => {
     const r = await res.json();
     rsvpModal.hidden = true;
     if (!res.ok) return showMsg(dashMsg, r.error || 'ส่งอีเมลไม่สำเร็จ', 'error');
-    showMsg(dashMsg, `ส่งอีเมลแล้ว: สำเร็จ ${r.sent} · ล้มเหลว ${r.failed}`, 'success');
+    if (r.failed > 0) {
+      showMsg(dashMsg, `ส่งไม่สำเร็จ ${r.failed} ฉบับ (สำเร็จ ${r.sent}) — สาเหตุ: ${r.error || 'ไม่ทราบ'}`, 'error');
+    } else {
+      showMsg(dashMsg, `ส่งอีเมลสำเร็จ ${r.sent} ฉบับ 🎉`, 'success');
+    }
     loadData();
   } catch {
     rsvpModal.hidden = true;

@@ -189,16 +189,18 @@ app.post('/api/admin/send-rsvp', requireAdmin, async (req, res) => {
     );
     let sent = 0;
     let failed = 0;
+    let lastError = null;
     for (const reg of rows) {
       try {
         await sendRsvpEmail(reg, baseUrl);
         sent++;
       } catch (e) {
         failed++;
+        lastError = e.message;
         console.error(`[send-rsvp] ส่งถึง ${reg.email} ไม่สำเร็จ:`, e.message);
       }
     }
-    return res.json({ ok: true, sent, failed, skipped: 0 });
+    return res.json({ ok: true, sent, failed, skipped: 0, error: lastError });
   } catch (err) {
     console.error('[send-rsvp] error', err);
     return res.status(500).json({ error: 'ส่งอีเมลไม่สำเร็จ' });
@@ -221,7 +223,7 @@ app.post('/api/admin/send-rsvp/:id', requireAdmin, async (req, res) => {
     return res.json({ ok: true, email: rows[0].email });
   } catch (err) {
     console.error('[send-rsvp/:id] error', err);
-    return res.status(500).json({ error: 'ส่งอีเมลไม่สำเร็จ' });
+    return res.status(500).json({ error: 'ส่งอีเมลไม่สำเร็จ: ' + err.message });
   }
 });
 

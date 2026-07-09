@@ -17,7 +17,11 @@ function getTransporter() {
   if (!transporter) {
     transporter = nodemailer.createTransport({
       service: 'gmail',
-      auth: { user: GMAIL_USER, pass: GMAIL_APP_PASSWORD },
+      // App Password มักถูกคัดลอกมาพร้อมเว้นวรรค — ตัดออกให้กันพลาด
+      auth: { user: GMAIL_USER, pass: GMAIL_APP_PASSWORD.replace(/\s+/g, '') },
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 15000,
     });
   }
   return transporter;
