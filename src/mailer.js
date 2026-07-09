@@ -5,14 +5,23 @@ const { rsvpSig } = require('./auth');
 // Railway มักต่อ IPv6 แล้วค้าง (connection timeout) — บังคับให้ resolve เป็น IPv4 ก่อน
 try { dns.setDefaultResultOrder('ipv4first'); } catch { /* Node เก่าไม่มีเมธอดนี้ */ }
 
-// อ่านค่าจาก env — ตั้งบน Railway: GMAIL_USER (อีเมลผู้ส่ง), GMAIL_APP_PASSWORD (App Password ของ Gmail)
+// ---------- ค่าตั้งจาก env ----------
+// Brevo (แนะนำ — ส่งผ่าน HTTPS ทำงานได้บน Railway): BREVO_API_KEY + BREVO_SENDER (อีเมลผู้ส่งที่ยืนยันใน Brevo)
+const BREVO_API_KEY = process.env.BREVO_API_KEY || '';
+// Gmail SMTP (สำรอง — มักถูกบล็อกบน Railway): GMAIL_USER + GMAIL_APP_PASSWORD
 const GMAIL_USER = process.env.GMAIL_USER || '';
 const GMAIL_APP_PASSWORD = process.env.GMAIL_APP_PASSWORD || '';
+// อีเมลผู้ส่ง (ใช้ BREVO_SENDER ก่อน ไม่งั้น fallback เป็น GMAIL_USER)
+const SENDER_EMAIL = process.env.BREVO_SENDER || GMAIL_USER || '';
+const SENDER_NAME = 'งานสัมมนา Siam University';
 const DRYRUN = process.env.MAIL_DRYRUN === 'true';
 
 // ตั้งค่าอีเมลครบหรือยัง (dry-run ถือว่าพร้อมเพื่อใช้ทดสอบ)
 function isConfigured() {
-  return DRYRUN || (!!GMAIL_USER && !!GMAIL_APP_PASSWORD);
+  if (DRYRUN) return true;
+  if (BREVO_API_KEY && SENDER_EMAIL) return true;
+  if (GMAIL_USER && GMAIL_APP_PASSWORD) return true;
+  return false;
 }
 
 let transporter = null;
@@ -70,7 +79,34 @@ function buildHtml(reg, baseUrl) {
   </div>`;
 }
 
-// ส่งอีเมล RSVP หนึ่งฉบับ — คืน true ถ้าสำเร็จ
+// ส่งผ่าน Brevo HTTP API (พอร์ต 443/HTTPS — ไม่โดน Railway บล็อก)
+async function sendViaBrevo(reg, subject, html) {
+  const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+    method: 'POST',
+    headers: {
+      'api-key': BREVO_API_KEY,
+      'Content-Type': 'application/json',
+      accept: 'application/json',
+    },
+    body: JSON.stringify({
+      sender: { name: SENDER_NAME, email: SENDER_EMAIL },
+      to: [{ email: reg.email, name: reg.full_name || undefined }],
+      subject,
+      htmlContent: html,
+    }),
+  });
+  if (!res.ok) {
+    let msg = `HTTP ${res.status}`;
+    try {
+      const j = await res.json();
+      msg = j.message || j.code || JSON.stringify(j);
+    } catch { /* body ไม่ใช่ JSON */ }
+    throw new Error('Brevo: ' + msg);
+  }
+  return true;
+}
+
+// ส่งอีเมล RSVP หนึ่งฉบับ — คืน true ถ้าสำเร็จ, throw ถ้าไม่สำเร็จ
 async function sendRsvpEmail(reg, baseUrl) {
   const html = buildHtml(reg, baseUrl);
   const subject = 'ยืนยันการเข้าร่วมงานสัมมนา — Think With Data, Decide With AI';
@@ -80,8 +116,13 @@ async function sendRsvpEmail(reg, baseUrl) {
     return true;
   }
 
+  // ใช้ Brevo ก่อนถ้ามี API key (ทำงานบน Railway), ไม่งั้นค่อยลอง Gmail SMTP
+  if (BREVO_API_KEY) {
+    return sendViaBrevo(reg, subject, html);
+  }
+
   await getTransporter().sendMail({
-    from: `"งานสัมมนา Siam University" <${GMAIL_USER}>`,
+    from: `"${SENDER_NAME}" <${GMAIL_USER}>`,
     to: reg.email,
     subject,
     html,

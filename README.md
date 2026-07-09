@@ -41,15 +41,22 @@ HTML/CSS/JS ธรรมดา + Node.js/Express + PostgreSQL (พร้อม d
 5. เปิด domain ที่ Railway ให้มา แล้วทดสอบทุกหน้า
 
 ## ตั้งค่าอีเมล (ระบบส่งถามการมา RSVP)
-ระบบส่งอีเมลผ่าน Gmail — ต้องมี App Password:
-1. เปิด **2-Step Verification** ในบัญชี Google ก่อน
-2. ไปที่ <https://myaccount.google.com/apppasswords> สร้าง App Password ใหม่ (16 ตัว)
-3. ตั้ง Variables บน Railway:
-   - `GMAIL_USER` = อีเมล Gmail ผู้ส่ง
-   - `GMAIL_APP_PASSWORD` = App Password ที่ได้ (ไม่ใช่รหัสผ่าน Gmail ปกติ)
-4. เข้าหน้า Admin → กด **📧 ส่งอีเมลถามการมา** ระบบจะส่งไปยังผู้ที่ยังไม่ตอบ ผู้รับกดยืนยันจากอีเมลได้เลย
+> ⚠️ Railway บล็อกพอร์ต SMTP — **Gmail SMTP ใช้ไม่ได้บน Railway** จึงแนะนำให้ใช้ **Brevo** (ส่งผ่าน HTTPS)
+
+### วิธีที่แนะนำ: Brevo (ฟรี 300 อีเมล/วัน)
+1. สมัครที่ <https://www.brevo.com> (ฟรี)
+2. ยืนยันอีเมลผู้ส่ง: **Senders, Domains & Dedicated IPs → Senders → Add a Sender** แล้วยืนยันจากลิงก์ในอีเมล
+3. สร้าง API key: **SMTP & API → API Keys → Generate a new API key**
+4. ตั้ง Variables บน Railway:
+   - `BREVO_API_KEY` = API key ที่ได้
+   - `BREVO_SENDER` = อีเมลผู้ส่งที่ยืนยันในข้อ 2
+5. เข้าหน้า Admin → กด **📧 ส่งอีเมลถามการมา** — ผู้รับกดยืนยัน มา/ไม่มา จากอีเมลได้เลย
+
+### ทางเลือก: Gmail SMTP (ใช้ได้เฉพาะตอนรัน local — Railway บล็อก)
+เปิด 2FA → สร้าง App Password ที่ <https://myaccount.google.com/apppasswords> แล้วตั้ง `GMAIL_USER` + `GMAIL_APP_PASSWORD`
 
 > ตั้ง `MAIL_DRYRUN=true` เพื่อทดสอบโดยไม่ส่งจริง (ระบบจะ log แทน)
+> ถ้ามีทั้ง Brevo และ Gmail ระบบจะใช้ Brevo ก่อน
 
 ## หมายเหตุด้านความปลอดภัย / PDPA
 - ต้องแทน "ลิงก์นโยบายความเป็นส่วนตัว" ในฟอร์ม (`public/index.html`) ด้วยลิงก์จริงของผู้จัด
