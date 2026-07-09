@@ -225,6 +225,13 @@ textarea { resize: vertical; min-height: 70px; }
 }
 .btn.secondary:hover { background: var(--border); filter: none; }
 .btn.auto { width: auto; padding: 11px 18px; }
+.btn.danger {
+  background: rgba(248, 113, 113, 0.12);
+  color: #fca5a5;
+  border: 1px solid var(--danger);
+  box-shadow: none;
+}
+.btn.danger:hover { background: rgba(248, 113, 113, 0.22); filter: none; }
 
 .msg { padding: 12px 14px; border-radius: 9px; margin-bottom: 16px; display: none; font-size: 0.95rem; }
 .msg.show { display: block; }

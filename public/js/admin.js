@@ -172,6 +172,22 @@ document.getElementById('logoutBtn').addEventListener('click', async () => {
   await fetch('/api/admin/logout', { method: 'POST' });
   window.location.reload();
 });
+document.getElementById('resetBtn').addEventListener('click', async () => {
+  // ยืนยัน 2 ชั้น กันกดพลาด — ลบถาวรกู้คืนไม่ได้
+  if (!confirm('⚠️ ล้างข้อมูลทั้งหมด?\n\nจะลบผู้ลงทะเบียนและแบบประเมินทั้งหมดถาวร กู้คืนไม่ได้')) return;
+  const typed = prompt('พิมพ์  ลบ  เพื่อยืนยันการล้างข้อมูลทั้งหมด');
+  if ((typed || '').trim() !== 'ลบ') return showMsg(dashMsg, 'ยกเลิกการล้างข้อมูล', 'error');
+  try {
+    const res = await fetch('/api/admin/reset', { method: 'POST' });
+    if (!res.ok) return showMsg(dashMsg, 'ล้างข้อมูลไม่สำเร็จ', 'error');
+    const r = await res.json();
+    showMsg(dashMsg, `ล้างข้อมูลแล้ว: ผู้ลงทะเบียน ${r.registrants} รายการ, แบบประเมิน ${r.feedback} รายการ`, 'success');
+    loadData();
+    loadFeedback();
+  } catch {
+    showMsg(dashMsg, 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้', 'error');
+  }
+});
 
 // เผื่อมี cookie อยู่แล้ว ลองเข้า dashboard เลย
 (async function tryAuto() {

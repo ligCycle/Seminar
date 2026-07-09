@@ -161,6 +161,21 @@ app.post('/api/admin/logout', (req, res) => {
   return res.json({ ok: true });
 });
 
+// ---------- API: ล้างข้อมูลทั้งหมด (admin) — ลบผู้ลงทะเบียน + แบบประเมิน ----------
+app.post('/api/admin/reset', requireAdmin, async (req, res) => {
+  try {
+    const r1 = await pool.query('SELECT COUNT(*)::int AS c FROM registrants');
+    const r2 = await pool.query('SELECT COUNT(*)::int AS c FROM feedback');
+    await pool.query('DELETE FROM registrants');
+    await pool.query('DELETE FROM feedback');
+    console.log(`[reset] ลบผู้ลงทะเบียน ${r1.rows[0].c} + แบบประเมิน ${r2.rows[0].c}`);
+    return res.json({ ok: true, registrants: r1.rows[0].c, feedback: r2.rows[0].c });
+  } catch (err) {
+    console.error('[reset] error', err);
+    return res.status(500).json({ error: 'ล้างข้อมูลไม่สำเร็จ' });
+  }
+});
+
 // ---------- API: รายชื่อ (admin) ----------
 app.get('/api/registrants', requireAdmin, async (req, res) => {
   try {
