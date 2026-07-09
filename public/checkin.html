@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>เช็คอินหน้างาน</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Noto+Sans+Thai:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/style.css" />
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <header class="page-head">
+      <h1>เช็คอินหน้างาน</h1>
+      <p>สแกน QR code ของผู้เข้าร่วม หรือกรอกรหัสด้วยตนเอง</p>
+    </header>
+
+    <div class="card">
+      <div id="authWarn" class="msg error show" style="display:none">
+        กรุณา <a href="/admin.html" style="color:#fecaca">เข้าสู่ระบบ Admin</a> ก่อนใช้งานหน้าเช็คอิน
+      </div>
+
+      <div id="result" class="result-box"></div>
+
+      <div id="reader"></div>
+
+      <div class="field" style="margin-top:16px">
+        <label>หรือกรอกรหัสลงทะเบียนด้วยตนเอง</label>
+        <div style="display:flex;gap:10px">
+          <input type="text" id="manualCode" placeholder="เช่น A1B2C3D4" style="text-transform:uppercase" />
+          <button class="btn auto" id="manualBtn">เช็คอิน</button>
+        </div>
+      </div>
+
+      <div class="links">
+        <a href="/admin.html">← กลับหน้า Admin</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/checkin.js"></script>
+</body>
+</html>

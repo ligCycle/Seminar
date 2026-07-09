@@ -1,4 +1,10 @@
+const crypto = require('crypto');
 const { Pool } = require('pg');
+
+// สุ่มรหัสลงทะเบียนสั้นๆ อ่านง่าย เช่น "A1B2C3D4" (ใช้ทำ QR + เช็คอิน)
+function genRegCode() {
+  return crypto.randomBytes(4).toString('hex').toUpperCase();
+}
 
 // Railway ตั้งค่า DATABASE_URL ให้อัตโนมัติเมื่อเพิ่ม PostgreSQL plugin
 const connectionString = process.env.DATABASE_URL;
@@ -36,6 +42,7 @@ async function initDb() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS registrants (
       id             SERIAL PRIMARY KEY,
+      reg_code       TEXT,
       full_name      TEXT NOT NULL,
       email          TEXT NOT NULL,
       phone          TEXT NOT NULL,
@@ -46,18 +53,36 @@ async function initDb() {
       dietary        TEXT,
       special_needs  TEXT,
       pdpa_consent   BOOLEAN NOT NULL DEFAULT FALSE,
-      created_at     TIMESTAMPTZ NOT NULL DEFAULT now()
+      status         TEXT NOT NULL DEFAULT 'registered',
+      created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+      checked_in_at  TIMESTAMPTZ
     );
   `);
 
-  // migration: ลบคอลัมน์เก่าที่เลิกใช้แล้ว (จากเวอร์ชันที่มี QR/เช็คอิน)
-  // ปลอดภัยกับตารางเดิมบน Railway และ no-op กับตารางใหม่
-  for (const col of ['reg_code', 'status', 'checked_in_at']) {
+  // migration: เพิ่มคอลัมน์เช็คอินกลับเข้าไป (สำหรับตารางเดิมบน Railway ที่เคยลบออก)
+  // no-op กับตารางที่มีคอลัมน์อยู่แล้ว
+  const addColumns = [
+    `ALTER TABLE registrants ADD COLUMN IF NOT EXISTS reg_code TEXT;`,
+    `ALTER TABLE registrants ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'registered';`,
+    `ALTER TABLE registrants ADD COLUMN IF NOT EXISTS checked_in_at TIMESTAMPTZ;`,
+  ];
+  for (const sql of addColumns) {
     try {
-      await pool.query(`ALTER TABLE registrants DROP COLUMN IF EXISTS ${col};`);
+      await pool.query(sql);
     } catch (e) {
-      console.warn(`[db] ข้ามการลบคอลัมน์ ${col}:`, e.message);
+      console.warn('[db] ข้ามการเพิ่มคอลัมน์:', e.message);
     }
+  }
+
+  // backfill reg_code ให้แถวเดิมที่ยังไม่มี (ทำใน JS เพื่อให้ทำงานได้ทั้ง pg-mem และ Postgres จริง)
+  try {
+    const { rows } = await pool.query('SELECT id FROM registrants WHERE reg_code IS NULL');
+    for (const r of rows) {
+      await pool.query('UPDATE registrants SET reg_code = $1 WHERE id = $2', [genRegCode(), r.id]);
+    }
+    if (rows.length > 0) console.log(`[db] backfill reg_code ให้ ${rows.length} แถว`);
+  } catch (e) {
+    console.warn('[db] ข้าม backfill reg_code:', e.message);
   }
 
   // ทำอีเมลเดิมให้เป็นตัวพิมพ์เล็ก แล้วลบแถวซ้ำ (เก็บ id น้อยสุด) ก่อนสร้าง unique index
@@ -68,6 +93,7 @@ async function initDb() {
     `DELETE FROM registrants WHERE id NOT IN (SELECT MIN(id) FROM registrants GROUP BY phone);`,
     `CREATE UNIQUE INDEX IF NOT EXISTS registrants_email_uidx ON registrants (email);`,
     `CREATE UNIQUE INDEX IF NOT EXISTS registrants_phone_uidx ON registrants (phone);`,
+    `CREATE UNIQUE INDEX IF NOT EXISTS registrants_regcode_uidx ON registrants (reg_code);`,
   ];
   for (const sql of migrations) {
     try {
@@ -77,7 +103,20 @@ async function initDb() {
     }
   }
 
-  console.log('[db] ตาราง registrants พร้อมใช้งาน');
+  // ตารางแบบประเมินความพึงพอใจ (anonymous — ไม่ผูกกับผู้ลงทะเบียน)
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS feedback (
+      id              SERIAL PRIMARY KEY,
+      overall_rating  INT NOT NULL,
+      speaker1_rating INT,
+      speaker2_rating INT,
+      recommend       BOOLEAN,
+      comment         TEXT,
+      created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `);
+
+  console.log('[db] ตาราง registrants + feedback พร้อมใช้งาน');
 }
 
-module.exports = { pool, initDb };
+module.exports = { pool, initDb, genRegCode };

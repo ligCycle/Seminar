@@ -33,11 +33,13 @@
 
     <div class="stats">
       <div class="stat"><div class="num" id="statTotal">0</div><div class="label">ลงทะเบียนทั้งหมด</div></div>
+      <div class="stat"><div class="num" id="statCheckedIn">0</div><div class="label">เช็คอินแล้ว (มางาน)</div></div>
     </div>
 
     <div class="toolbar">
       <input type="text" id="search" placeholder="ค้นหา ชื่อ / อีเมล / องค์กร" />
       <a class="btn secondary auto" href="/">+ ไปหน้าสมัคร</a>
+      <a class="btn secondary auto" href="/checkin.html">📷 เช็คอินหน้างาน</a>
       <button class="btn secondary auto" id="refreshBtn">รีเฟรช</button>
       <button class="btn secondary auto" id="exportBtn">export CSV</button>
       <button class="btn secondary auto" id="logoutBtn">ออกจากระบบ</button>
@@ -49,13 +51,43 @@
       <table>
         <thead>
           <tr>
-            <th>ชื่อ-นามสกุล</th><th>อีเมล</th><th>เบอร์โทร</th>
+            <th>สถานะ</th><th>ชื่อ-นามสกุล</th><th>อีเมล</th><th>เบอร์โทร</th>
             <th>องค์กร</th><th>ตำแหน่ง</th><th>รอบ</th><th>อาหาร</th>
-            <th>เวลาลงทะเบียน</th>
+            <th>เวลาลงทะเบียน</th><th>เวลาเช็คอิน</th>
           </tr>
         </thead>
         <tbody id="tbody"></tbody>
       </table>
+    </div>
+
+    <!-- ===== ผลประเมินความพึงพอใจ ===== -->
+    <header class="page-head" style="margin-top:44px">
+      <h1>ผลประเมินความพึงพอใจ</h1>
+    </header>
+
+    <div class="stats">
+      <div class="stat"><div class="num" id="fbCount">0</div><div class="label">ผู้ประเมิน</div></div>
+      <div class="stat"><div class="num" id="fbOverall">–</div><div class="label">พึงพอใจโดยรวม /5</div></div>
+      <div class="stat"><div class="num" id="fbSpeaker1">–</div><div class="label">วิทยากร 1 /5</div></div>
+      <div class="stat"><div class="num" id="fbSpeaker2">–</div><div class="label">วิทยากร 2 /5</div></div>
+      <div class="stat"><div class="num" id="fbRecommend">–</div><div class="label">จะแนะนำต่อ</div></div>
+    </div>
+
+    <div class="toolbar">
+      <div style="flex:1"></div>
+      <button class="btn secondary auto" id="fbExportBtn">export ผลประเมิน</button>
+    </div>
+
+    <div class="grid-2" style="align-items:start">
+      <div>
+        <h3 style="margin:0 0 10px;color:var(--gold-light)">ความคิดเห็น</h3>
+        <div id="fbComments"></div>
+      </div>
+      <div class="card qr-wrap" style="padding:20px">
+        <h3 style="margin:0 0 10px;color:var(--gold-light)">QR แบบสอบถาม</h3>
+        <p style="color:var(--muted);font-size:0.85rem;margin:0 0 12px">แสดง/ฉาย QR นี้หน้างานตอนจบ ให้ผู้เข้าร่วมสแกนไปทำแบบประเมิน</p>
+        <div id="fbQrBox"><p style="color:var(--muted)">กำลังโหลด...</p></div>
+      </div>
     </div>
   </div>
 

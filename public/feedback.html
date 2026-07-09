@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>แบบประเมินความพึงพอใจ — Think With Data, Decide With AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Noto+Sans+Thai:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <div class="container">
+    <header class="page-head">
+      <h1>แบบประเมินความพึงพอใจ</h1>
+      <p>งานสัมมนา “Think With Data, Decide With AI” — ความเห็นของคุณช่วยเราพัฒนางานครั้งต่อไป (ไม่ระบุตัวตน)</p>
+    </header>
+
+    <div class="card">
+      <div id="msg" class="msg"></div>
+
+      <form id="feedbackForm">
+        <div class="field">
+          <label>ความพึงพอใจโดยรวมต่องานสัมมนา <span class="req">*</span></label>
+          <div class="stars" data-name="overall_rating">
+            <button type="button" class="star" data-value="1">★</button>
+            <button type="button" class="star" data-value="2">★</button>
+            <button type="button" class="star" data-value="3">★</button>
+            <button type="button" class="star" data-value="4">★</button>
+            <button type="button" class="star" data-value="5">★</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>วิทยากรช่วงที่ 1 — Thammapohn Phuengtua <small>(Wisesight)</small></label>
+          <div class="stars" data-name="speaker1_rating">
+            <button type="button" class="star" data-value="1">★</button>
+            <button type="button" class="star" data-value="2">★</button>
+            <button type="button" class="star" data-value="3">★</button>
+            <button type="button" class="star" data-value="4">★</button>
+            <button type="button" class="star" data-value="5">★</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>วิทยากรช่วงที่ 2 — Songpon Yingsuwannachote <small>(DataFirst)</small></label>
+          <div class="stars" data-name="speaker2_rating">
+            <button type="button" class="star" data-value="1">★</button>
+            <button type="button" class="star" data-value="2">★</button>
+            <button type="button" class="star" data-value="3">★</button>
+            <button type="button" class="star" data-value="4">★</button>
+            <button type="button" class="star" data-value="5">★</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>คุณจะแนะนำงานนี้ให้คนอื่นไหม</label>
+          <div class="toggle-group" data-name="recommend">
+            <button type="button" class="toggle-btn" data-value="yes">👍 แนะนำ</button>
+            <button type="button" class="toggle-btn" data-value="no">👎 ไม่แนะนำ</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>ความคิดเห็น / ข้อเสนอแนะเพิ่มเติม <small>(ถ้ามี)</small></label>
+          <textarea name="comment" placeholder="สิ่งที่ชอบ หรืออยากให้ปรับปรุง..."></textarea>
+        </div>
+
+        <button type="submit" class="btn" id="submitBtn">ส่งแบบประเมิน</button>
+      </form>
+    </div>
+
+    <div class="links">
+      <a href="/">← กลับหน้าหลัก</a>
+    </div>
+  </div>
+
+  <script src="/js/feedback.js"></script>
+</body>
+</html>
