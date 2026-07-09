@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>THINK WITH DATA, DECIDE WITH AI — ลงทะเบียน</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Noto+Sans+Thai:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <div class="container">
+    <!-- ===== HERO ===== -->
+    <section class="hero">
+      <span class="eyebrow">SIAM UNIVERSITY · SEMINAR 2026</span>
+      <h1>Think With <span class="gold">Data</span><br /><span class="gold">Decide</span> With AI</h1>
+      <p class="tagline">
+        เปิดมุมมองใหม่บนโลกเชียลด้วยพลังของ AI และ Social Listening
+        ค้นหา Insight ที่ซ่อนอยู่ของผู้คน และเปลี่ยนข้อมูลให้กลายเป็นไอเดียที่นำไปใช้ได้จริง
+      </p>
+
+      <div class="event-meta">
+        <span class="chip">📅 <b>ศุกร์ 3 เม.ย. 2026</b></span>
+        <span class="chip">🕐 <b>13:00 – 16:00 น.</b></span>
+        <span class="chip">📍 <b>Hall of Frame</b> ชั้น 1 อาคาร 19</span>
+        <span class="chip">🎟️ <b>รับจำกัด 100 ที่นั่ง</b></span>
+      </div>
+    </section>
+
+    <!-- ===== SPEAKERS ===== -->
+    <div class="speakers">
+      <div class="speaker">
+        <span class="time">13:00 – 14:30</span>
+        <div class="name">Thammapohn Phuengtua</div>
+        <div class="org">from Wisesight</div>
+      </div>
+      <div class="speaker">
+        <span class="time">14:30 – 16:00</span>
+        <div class="name">Songpon Yingsuwannachote</div>
+        <div class="org">from DataFirst</div>
+      </div>
+    </div>
+
+    <!-- ===== FORM ===== -->
+    <h2 class="section-title">ลงทะเบียน<span>เข้าร่วมงาน</span></h2>
+
+    <div class="card">
+      <div id="msg" class="msg"></div>
+
+      <form id="regForm" novalidate>
+        <div class="field">
+          <label>ชื่อ - นามสกุล <span class="req">*</span></label>
+          <input type="text" name="full_name" required />
+        </div>
+
+        <div class="grid-2">
+          <div class="field">
+            <label>อีเมล <span class="req">*</span></label>
+            <input type="email" name="email" required />
+          </div>
+          <div class="field">
+            <label>เบอร์โทรศัพท์ <span class="req">*</span></label>
+            <input type="tel" name="phone" required />
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="field">
+            <label>บริษัท / หน่วยงาน</label>
+            <input type="text" name="organization" />
+          </div>
+          <div class="field">
+            <label>ตำแหน่งงาน</label>
+            <input type="text" name="job_title" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label>ช่วงที่สนใจเข้าร่วม</label>
+          <select name="session_choice">
+            <option value="">-- เลือกช่วงเวลา --</option>
+            <option value="13:00-14:30 Thammapohn (Wisesight)">13:00–14:30 · Thammapohn (Wisesight)</option>
+            <option value="14:30-16:00 Songpon (DataFirst)">14:30–16:00 · Songpon (DataFirst)</option>
+            <option value="เข้าร่วมทั้งงาน">เข้าร่วมทั้งงาน (แนะนำ)</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>รู้จักงานนี้จากช่องทางไหน</label>
+          <select name="heard_from">
+            <option value="">-- เลือก --</option>
+            <option value="Facebook">Facebook</option>
+            <option value="Instagram">Instagram</option>
+            <option value="อีเมล">อีเมล</option>
+            <option value="เพื่อน/คนรู้จักแนะนำ">เพื่อน/คนรู้จักแนะนำ</option>
+            <option value="อาจารย์/มหาวิทยาลัย">อาจารย์/มหาวิทยาลัย</option>
+            <option value="อื่นๆ">อื่นๆ</option>
+          </select>
+        </div>
+
+        <div class="grid-2">
+          <div class="field">
+            <label>ข้อจำกัดด้านอาหาร <small>(ถ้ามี)</small></label>
+            <input type="text" name="dietary" placeholder="เช่น มังสวิรัติ, ฮาลาล, แพ้อาหารทะเล" />
+          </div>
+          <div class="field">
+            <label>ความต้องการพิเศษ <small>(ถ้ามี)</small></label>
+            <input type="text" name="special_needs" placeholder="เช่น ต้องการทางลาดรถเข็น" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="consent">
+            <input type="checkbox" name="pdpa_consent" required />
+            <span>
+              ข้าพเจ้ายินยอมให้ผู้จัดงานเก็บและใช้ข้อมูลส่วนบุคคลข้างต้นเพื่อการจัดงานสัมมนานี้
+              ตามพระราชบัญญัติคุ้มครองข้อมูลส่วนบุคคล (PDPA)
+              <a href="#" onclick="alert('กรุณาแทนที่ด้วยลิงก์นโยบายความเป็นส่วนตัวจริงของผู้จัดงาน'); return false;">อ่านนโยบายความเป็นส่วนตัว</a>
+            </span>
+          </label>
+        </div>
+
+        <button type="submit" class="btn" id="submitBtn">REGISTER NOW</button>
+      </form>
+    </div>
+
+    <div class="foot">
+      <div class="brands">SIAM · CS · SEAVALUE · DATA FIRST · WISESIGHT</div>
+      สอบถามเพิ่มเติม คุณพรรณิภา 092-575-5123 · pannipakhu@siam.edu
+    </div>
+  </div>
+
+  <script src="/js/register.js"></script>
+</body>
+</html>
