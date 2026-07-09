@@ -7,6 +7,12 @@ function showMsg(text, type) {
   msg.className = 'msg show ' + type;
 }
 
+// เบอร์โทร: พิมพ์ได้เฉพาะตัวเลข สูงสุด 10 หลัก
+const phoneInput = form.querySelector('[name="phone"]');
+phoneInput.addEventListener('input', () => {
+  phoneInput.value = phoneInput.value.replace(/\D/g, '').slice(0, 10);
+});
+
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
   msg.className = 'msg';
@@ -28,6 +34,11 @@ form.addEventListener('submit', async (e) => {
   if (!data.full_name || !data.email || !data.phone) {
     return showMsg('กรุณากรอกชื่อ อีเมล และเบอร์โทรให้ครบ', 'error');
   }
+  const phoneDigits = String(data.phone || '').replace(/\D/g, '');
+  if (!/^\d{10}$/.test(phoneDigits)) {
+    return showMsg('เบอร์โทรต้องเป็นตัวเลข 10 หลักพอดี', 'error');
+  }
+  data.phone = phoneDigits;
   if (!data.pdpa_consent) {
     return showMsg('กรุณายินยอมนโยบายความเป็นส่วนตัว (PDPA) ก่อนลงทะเบียน', 'error');
   }
@@ -56,6 +67,6 @@ form.addEventListener('submit', async (e) => {
   } catch (err) {
     showMsg('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ กรุณาลองใหม่', 'error');
     submitBtn.disabled = false;
-    submitBtn.textContent = 'ลงทะเบียน';
+    submitBtn.textContent = 'REGISTER NOW';
   }
 });

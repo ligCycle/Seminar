@@ -60,6 +60,23 @@ async function initDb() {
     }
   }
 
+  // ทำอีเมลเดิมให้เป็นตัวพิมพ์เล็ก แล้วลบแถวซ้ำ (เก็บ id น้อยสุด) ก่อนสร้าง unique index
+  // จำเป็นเพราะถ้ามีข้อมูลซ้ำอยู่ การสร้าง unique index จะล้มเหลว
+  const migrations = [
+    `UPDATE registrants SET email = lower(email) WHERE email <> lower(email);`,
+    `DELETE FROM registrants WHERE id NOT IN (SELECT MIN(id) FROM registrants GROUP BY email);`,
+    `DELETE FROM registrants WHERE id NOT IN (SELECT MIN(id) FROM registrants GROUP BY phone);`,
+    `CREATE UNIQUE INDEX IF NOT EXISTS registrants_email_uidx ON registrants (email);`,
+    `CREATE UNIQUE INDEX IF NOT EXISTS registrants_phone_uidx ON registrants (phone);`,
+  ];
+  for (const sql of migrations) {
+    try {
+      await pool.query(sql);
+    } catch (e) {
+      console.warn('[db] ข้าม migration:', e.message);
+    }
+  }
+
   console.log('[db] ตาราง registrants พร้อมใช้งาน');
 }
 

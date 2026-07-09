@@ -60,8 +60,8 @@
             <input type="email" name="email" required />
           </div>
           <div class="field">
-            <label>เบอร์โทรศัพท์ <span class="req">*</span></label>
-            <input type="tel" name="phone" required />
+            <label>เบอร์โทรศัพท์ <span class="req">*</span> <small>(ตัวเลข 10 หลัก)</small></label>
+            <input type="tel" name="phone" inputmode="numeric" maxlength="10" pattern="[0-9]{10}" placeholder="0812345678" required />
           </div>
         </div>
 

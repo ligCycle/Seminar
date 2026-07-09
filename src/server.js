@@ -29,8 +29,9 @@ app.post('/api/register', async (req, res) => {
   try {
     const b = req.body || {};
     const full_name = (b.full_name || '').trim();
-    const email = (b.email || '').trim();
-    const phone = (b.phone || '').trim();
+    const email = (b.email || '').trim().toLowerCase();
+    // เก็บเฉพาะตัวเลข แล้วบังคับให้เป็น 10 หลักพอดี
+    const phone = (b.phone || '').replace(/\D/g, '');
     const pdpa_consent = b.pdpa_consent === true || b.pdpa_consent === 'true' || b.pdpa_consent === 'on';
 
     if (!full_name || !email || !phone) {
@@ -39,27 +40,58 @@ app.post('/api/register', async (req, res) => {
     if (!EMAIL_RE.test(email)) {
       return res.status(400).json({ error: 'รูปแบบอีเมลไม่ถูกต้อง' });
     }
+    if (!/^\d{10}$/.test(phone)) {
+      return res.status(400).json({ error: 'เบอร์โทรต้องเป็นตัวเลข 10 หลักพอดี' });
+    }
     if (!pdpa_consent) {
       return res.status(400).json({ error: 'กรุณายินยอมนโยบายความเป็นส่วนตัว (PDPA) ก่อนลงทะเบียน' });
     }
 
-    const result = await pool.query(
-      `INSERT INTO registrants
-         (full_name, email, phone, organization, job_title,
-          session_choice, heard_from, dietary, special_needs, pdpa_consent)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
-       RETURNING id, full_name`,
-      [
-        full_name, email, phone,
-        (b.organization || '').trim() || null,
-        (b.job_title || '').trim() || null,
-        (b.session_choice || '').trim() || null,
-        (b.heard_from || '').trim() || null,
-        (b.dietary || '').trim() || null,
-        (b.special_needs || '').trim() || null,
-        true,
-      ]
+    // ตรวจซ้ำก่อน เพื่อแจ้งได้ชัดว่าซ้ำที่อีเมลหรือเบอร์
+    const dup = await pool.query(
+      'SELECT email, phone FROM registrants WHERE email = $1 OR phone = $2 LIMIT 1',
+      [email, phone]
     );
+    if (dup.rows.length > 0) {
+      if (dup.rows[0].email === email) {
+        return res.status(409).json({ error: 'อีเมลนี้ถูกใช้ลงทะเบียนไปแล้ว' });
+      }
+      return res.status(409).json({ error: 'เบอร์โทรนี้ถูกใช้ลงทะเบียนไปแล้ว' });
+    }
+
+    let result;
+    try {
+      result = await pool.query(
+        `INSERT INTO registrants
+           (full_name, email, phone, organization, job_title,
+            session_choice, heard_from, dietary, special_needs, pdpa_consent)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+         RETURNING id, full_name`,
+        [
+          full_name, email, phone,
+          (b.organization || '').trim() || null,
+          (b.job_title || '').trim() || null,
+          (b.session_choice || '').trim() || null,
+          (b.heard_from || '').trim() || null,
+          (b.dietary || '').trim() || null,
+          (b.special_needs || '').trim() || null,
+          true,
+        ]
+      );
+    } catch (err) {
+      // 23505 = unique violation → แจ้งว่าอีเมลหรือเบอร์ซ้ำ
+      if (err.code === '23505') {
+        const c = err.constraint || '';
+        if (c.includes('email')) {
+          return res.status(409).json({ error: 'อีเมลนี้ถูกใช้ลงทะเบียนไปแล้ว' });
+        }
+        if (c.includes('phone')) {
+          return res.status(409).json({ error: 'เบอร์โทรนี้ถูกใช้ลงทะเบียนไปแล้ว' });
+        }
+        return res.status(409).json({ error: 'ข้อมูลนี้ถูกใช้ลงทะเบียนไปแล้ว' });
+      }
+      throw err;
+    }
 
     return res.json({
       ok: true,
