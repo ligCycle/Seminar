@@ -212,6 +212,7 @@ textarea { resize: vertical; min-height: 70px; }
   font-weight: 800;
   letter-spacing: 0.5px;
   cursor: pointer;
+  text-decoration: none;
   transition: filter 0.15s, transform 0.05s;
   box-shadow: 0 8px 24px rgba(230, 179, 37, 0.25);
 }
