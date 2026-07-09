@@ -47,9 +47,7 @@ async function initDb() {
       dietary        TEXT,
       special_needs  TEXT,
       pdpa_consent   BOOLEAN NOT NULL DEFAULT FALSE,
-      status         TEXT NOT NULL DEFAULT 'registered',
-      created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
-      checked_in_at  TIMESTAMPTZ
+      created_at     TIMESTAMPTZ NOT NULL DEFAULT now()
     );
   `);
   console.log('[db] ตาราง registrants พร้อมใช้งาน');

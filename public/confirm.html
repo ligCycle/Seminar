@@ -13,7 +13,7 @@
   <div class="container">
     <header class="page-head">
       <h1>🎉 ลงทะเบียนสำเร็จ</h1>
-      <p>กรุณาบันทึก QR code นี้ไว้เพื่อใช้เช็คอินหน้างาน</p>
+      <p>ขอบคุณที่ลงทะเบียนเข้าร่วมงาน แล้วพบกันที่งานครับ</p>
     </header>
 
     <div class="card qr-wrap" id="content">
@@ -31,11 +31,11 @@
     if (raw) {
       const r = JSON.parse(raw);
       content.innerHTML = `
+        <div class="icon" style="font-size:3rem">✅</div>
         <p>สวัสดีคุณ <strong>${escapeHtml(r.full_name)}</strong></p>
-        <img src="${r.qr}" alt="QR code เช็คอิน" />
+        <p style="color:var(--muted)">รหัสอ้างอิงการลงทะเบียนของคุณคือ</p>
         <div class="reg-code">${escapeHtml(r.reg_code)}</div>
-        <p style="color:var(--muted)">แสดง QR code หรือแจ้งรหัสนี้กับเจ้าหน้าที่หน้างาน</p>
-        <button class="btn secondary auto" onclick="downloadQr('${r.qr}', '${escapeHtml(r.reg_code)}')">บันทึกรูป QR</button>
+        <p style="color:var(--muted)">เก็บรหัสนี้ไว้อ้างอิงหากต้องติดต่อผู้จัดงาน</p>
       `;
     }
 
@@ -43,13 +43,6 @@
       return String(s == null ? '' : s)
         .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-    }
-
-    function downloadQr(dataUrl, code) {
-      const a = document.createElement('a');
-      a.href = dataUrl;
-      a.download = 'qr-' + code + '.png';
-      a.click();
     }
   </script>
 </body>

@@ -57,8 +57,6 @@ async function loadData() {
     const r = await res.json();
     allRows = r.registrants || [];
     document.getElementById('statTotal').textContent = r.total || 0;
-    document.getElementById('statCheckedIn').textContent = r.checkedIn || 0;
-    document.getElementById('statPending').textContent = (r.total || 0) - (r.checkedIn || 0);
     render();
   } catch {
     showMsg(dashMsg, 'ดึงข้อมูลไม่สำเร็จ', 'error');
@@ -74,14 +72,11 @@ function render() {
     : allRows;
 
   if (rows.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--muted)">ไม่พบข้อมูล</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--muted)">ไม่พบข้อมูล</td></tr>';
     return;
   }
 
   tbody.innerHTML = rows.map((r) => {
-    const badge = r.status === 'checked_in'
-      ? '<span class="badge checked_in">เช็คอินแล้ว</span>'
-      : '<span class="badge registered">ลงทะเบียน</span>';
     return `<tr>
       <td>${esc(r.reg_code)}</td>
       <td>${esc(r.full_name)}</td>
@@ -91,7 +86,6 @@ function render() {
       <td>${esc(r.job_title)}</td>
       <td>${esc(r.session_choice)}</td>
       <td>${esc(r.dietary)}</td>
-      <td>${badge}</td>
       <td>${fmtDate(r.created_at)}</td>
     </tr>`;
   }).join('');

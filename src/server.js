@@ -4,7 +4,6 @@ const path = require('path');
 const crypto = require('crypto');
 const express = require('express');
 const cookieParser = require('cookie-parser');
-const QRCode = require('qrcode');
 
 const { pool, initDb } = require('./db');
 const { issueToken, checkPassword, requireAdmin, COOKIE_NAME } = require('./auth');
@@ -85,14 +84,10 @@ app.post('/api/register', async (req, res) => {
       return res.status(500).json({ error: 'ไม่สามารถสร้างรหัสลงทะเบียนได้ กรุณาลองใหม่' });
     }
 
-    // สร้าง QR code เป็น data URL (encode reg_code)
-    const qrDataUrl = await QRCode.toDataURL(row.reg_code, { width: 320, margin: 2 });
-
     return res.json({
       ok: true,
       reg_code: row.reg_code,
       full_name: row.full_name,
-      qr: qrDataUrl,
     });
   } catch (err) {
     console.error('[register] error', err);
@@ -126,14 +121,11 @@ app.get('/api/registrants', requireAdmin, async (req, res) => {
   try {
     const { rows } = await pool.query(
       `SELECT id, reg_code, full_name, email, phone, organization, job_title,
-              session_choice, heard_from, dietary, special_needs,
-              status, created_at, checked_in_at
+              session_choice, heard_from, dietary, special_needs, created_at
        FROM registrants
        ORDER BY created_at DESC`
     );
-    const total = rows.length;
-    const checkedIn = rows.filter((r) => r.status === 'checked_in').length;
-    return res.json({ ok: true, total, checkedIn, registrants: rows });
+    return res.json({ ok: true, total: rows.length, registrants: rows });
   } catch (err) {
     console.error('[registrants] error', err);
     return res.status(500).json({ error: 'ดึงข้อมูลไม่สำเร็จ' });
@@ -145,15 +137,13 @@ app.get('/api/export', requireAdmin, async (req, res) => {
   try {
     const { rows } = await pool.query(
       `SELECT reg_code, full_name, email, phone, organization, job_title,
-              session_choice, heard_from, dietary, special_needs,
-              status, created_at, checked_in_at
+              session_choice, heard_from, dietary, special_needs, created_at
        FROM registrants
        ORDER BY created_at DESC`
     );
     const headers = [
       'reg_code', 'full_name', 'email', 'phone', 'organization', 'job_title',
-      'session_choice', 'heard_from', 'dietary', 'special_needs',
-      'status', 'created_at', 'checked_in_at',
+      'session_choice', 'heard_from', 'dietary', 'special_needs', 'created_at',
     ];
     const lines = [headers.join(',')];
     for (const r of rows) {
@@ -167,49 +157,6 @@ app.get('/api/export', requireAdmin, async (req, res) => {
   } catch (err) {
     console.error('[export] error', err);
     return res.status(500).json({ error: 'export ไม่สำเร็จ' });
-  }
-});
-
-// ---------- API: เช็คอิน (admin) ----------
-app.post('/api/checkin', requireAdmin, async (req, res) => {
-  try {
-    const reg_code = (req.body && req.body.reg_code ? String(req.body.reg_code) : '').trim().toUpperCase();
-    if (!reg_code) {
-      return res.status(400).json({ error: 'ไม่พบรหัสลงทะเบียน' });
-    }
-
-    const { rows } = await pool.query(
-      'SELECT id, full_name, status, checked_in_at FROM registrants WHERE reg_code = $1',
-      [reg_code]
-    );
-    if (rows.length === 0) {
-      return res.status(404).json({ status: 'not_found', error: 'ไม่พบผู้ลงทะเบียนรหัสนี้' });
-    }
-
-    const person = rows[0];
-    if (person.status === 'checked_in') {
-      return res.json({
-        status: 'already',
-        full_name: person.full_name,
-        checked_in_at: person.checked_in_at,
-      });
-    }
-
-    const upd = await pool.query(
-      `UPDATE registrants
-       SET status = 'checked_in', checked_in_at = now()
-       WHERE id = $1
-       RETURNING full_name, checked_in_at`,
-      [person.id]
-    );
-    return res.json({
-      status: 'success',
-      full_name: upd.rows[0].full_name,
-      checked_in_at: upd.rows[0].checked_in_at,
-    });
-  } catch (err) {
-    console.error('[checkin] error', err);
-    return res.status(500).json({ error: 'เช็คอินไม่สำเร็จ' });
   }
 });
 

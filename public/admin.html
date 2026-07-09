@@ -33,15 +33,12 @@
 
     <div class="stats">
       <div class="stat"><div class="num" id="statTotal">0</div><div class="label">ลงทะเบียนทั้งหมด</div></div>
-      <div class="stat"><div class="num" id="statCheckedIn">0</div><div class="label">เช็คอินแล้ว</div></div>
-      <div class="stat"><div class="num" id="statPending">0</div><div class="label">ยังไม่เช็คอิน</div></div>
     </div>
 
     <div class="toolbar">
       <input type="text" id="search" placeholder="ค้นหา ชื่อ / อีเมล / รหัส / องค์กร" />
       <button class="btn secondary auto" id="refreshBtn">รีเฟรช</button>
       <button class="btn secondary auto" id="exportBtn">export CSV</button>
-      <a class="btn secondary auto" href="/checkin.html" style="text-decoration:none">หน้าเช็คอิน</a>
       <button class="btn secondary auto" id="logoutBtn">ออกจากระบบ</button>
     </div>
 
@@ -53,7 +50,7 @@
           <tr>
             <th>รหัส</th><th>ชื่อ-นามสกุล</th><th>อีเมล</th><th>เบอร์โทร</th>
             <th>องค์กร</th><th>ตำแหน่ง</th><th>รอบ</th><th>อาหาร</th>
-            <th>สถานะ</th><th>เวลาลงทะเบียน</th>
+            <th>เวลาลงทะเบียน</th>
           </tr>
         </thead>
         <tbody id="tbody"></tbody>
