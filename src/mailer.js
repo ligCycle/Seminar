@@ -1,5 +1,9 @@
+const dns = require('dns');
 const nodemailer = require('nodemailer');
 const { rsvpSig } = require('./auth');
+
+// Railway มักต่อ IPv6 แล้วค้าง (connection timeout) — บังคับให้ resolve เป็น IPv4 ก่อน
+try { dns.setDefaultResultOrder('ipv4first'); } catch { /* Node เก่าไม่มีเมธอดนี้ */ }
 
 // อ่านค่าจาก env — ตั้งบน Railway: GMAIL_USER (อีเมลผู้ส่ง), GMAIL_APP_PASSWORD (App Password ของ Gmail)
 const GMAIL_USER = process.env.GMAIL_USER || '';
@@ -21,6 +25,7 @@ function getTransporter() {
       port: 587,
       secure: false,
       requireTLS: true,
+      family: 4, // บังคับ IPv4
       // App Password มักถูกคัดลอกมาพร้อมเว้นวรรค — ตัดออกให้กันพลาด
       auth: { user: GMAIL_USER, pass: GMAIL_APP_PASSWORD.replace(/\s+/g, '') },
       connectionTimeout: 12000,
