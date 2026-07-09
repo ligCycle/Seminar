@@ -15,12 +15,16 @@ let transporter = null;
 function getTransporter() {
   if (DRYRUN) return null;
   if (!transporter) {
+    // ใช้พอร์ต 587 (STARTTLS) เพราะ Railway มักบล็อกพอร์ต 465 (ที่ service:'gmail' ใช้)
     transporter = nodemailer.createTransport({
-      service: 'gmail',
+      host: 'smtp.gmail.com',
+      port: 587,
+      secure: false,
+      requireTLS: true,
       // App Password มักถูกคัดลอกมาพร้อมเว้นวรรค — ตัดออกให้กันพลาด
       auth: { user: GMAIL_USER, pass: GMAIL_APP_PASSWORD.replace(/\s+/g, '') },
-      connectionTimeout: 10000,
-      greetingTimeout: 10000,
+      connectionTimeout: 12000,
+      greetingTimeout: 12000,
       socketTimeout: 15000,
     });
   }
