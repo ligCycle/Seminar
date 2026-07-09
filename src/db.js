@@ -36,7 +36,6 @@ async function initDb() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS registrants (
       id             SERIAL PRIMARY KEY,
-      reg_code       TEXT UNIQUE NOT NULL,
       full_name      TEXT NOT NULL,
       email          TEXT NOT NULL,
       phone          TEXT NOT NULL,
@@ -50,6 +49,17 @@ async function initDb() {
       created_at     TIMESTAMPTZ NOT NULL DEFAULT now()
     );
   `);
+
+  // migration: ลบคอลัมน์เก่าที่เลิกใช้แล้ว (จากเวอร์ชันที่มี QR/เช็คอิน)
+  // ปลอดภัยกับตารางเดิมบน Railway และ no-op กับตารางใหม่
+  for (const col of ['reg_code', 'status', 'checked_in_at']) {
+    try {
+      await pool.query(`ALTER TABLE registrants DROP COLUMN IF EXISTS ${col};`);
+    } catch (e) {
+      console.warn(`[db] ข้ามการลบคอลัมน์ ${col}:`, e.message);
+    }
+  }
+
   console.log('[db] ตาราง registrants พร้อมใช้งาน');
 }
 

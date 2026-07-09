@@ -67,18 +67,17 @@ function render() {
   const q = search.value.trim().toLowerCase();
   const rows = q
     ? allRows.filter((r) =>
-        [r.full_name, r.email, r.reg_code, r.organization]
+        [r.full_name, r.email, r.organization]
           .some((v) => (v || '').toLowerCase().includes(q)))
     : allRows;
 
   if (rows.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--muted)">ไม่พบข้อมูล</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--muted)">ไม่พบข้อมูล</td></tr>';
     return;
   }
 
   tbody.innerHTML = rows.map((r) => {
     return `<tr>
-      <td>${esc(r.reg_code)}</td>
       <td>${esc(r.full_name)}</td>
       <td>${esc(r.email)}</td>
       <td>${esc(r.phone)}</td>

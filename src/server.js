@@ -1,7 +1,6 @@
 require('dotenv').config();
 
 const path = require('path');
-const crypto = require('crypto');
 const express = require('express');
 const cookieParser = require('cookie-parser');
 
@@ -17,11 +16,6 @@ app.use(cookieParser());
 
 // ---------- helpers ----------
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-function genRegCode() {
-  // hex สั้นๆ อ่านง่าย เช่น "A1B2C3D4"
-  return crypto.randomBytes(4).toString('hex').toUpperCase();
-}
 
 function csvEscape(value) {
   if (value === null || value === undefined) return '';
@@ -49,45 +43,27 @@ app.post('/api/register', async (req, res) => {
       return res.status(400).json({ error: 'กรุณายินยอมนโยบายความเป็นส่วนตัว (PDPA) ก่อนลงทะเบียน' });
     }
 
-    // สุ่ม reg_code ให้ไม่ซ้ำ (retry สูงสุด 5 ครั้ง)
-    let reg_code;
-    let row;
-    for (let i = 0; i < 5; i++) {
-      reg_code = genRegCode();
-      try {
-        const result = await pool.query(
-          `INSERT INTO registrants
-             (reg_code, full_name, email, phone, organization, job_title,
-              session_choice, heard_from, dietary, special_needs, pdpa_consent)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
-           RETURNING id, reg_code, full_name`,
-          [
-            reg_code, full_name, email, phone,
-            (b.organization || '').trim() || null,
-            (b.job_title || '').trim() || null,
-            (b.session_choice || '').trim() || null,
-            (b.heard_from || '').trim() || null,
-            (b.dietary || '').trim() || null,
-            (b.special_needs || '').trim() || null,
-            true,
-          ]
-        );
-        row = result.rows[0];
-        break;
-      } catch (err) {
-        if (err.code === '23505') continue; // unique violation → สุ่มใหม่
-        throw err;
-      }
-    }
-
-    if (!row) {
-      return res.status(500).json({ error: 'ไม่สามารถสร้างรหัสลงทะเบียนได้ กรุณาลองใหม่' });
-    }
+    const result = await pool.query(
+      `INSERT INTO registrants
+         (full_name, email, phone, organization, job_title,
+          session_choice, heard_from, dietary, special_needs, pdpa_consent)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+       RETURNING id, full_name`,
+      [
+        full_name, email, phone,
+        (b.organization || '').trim() || null,
+        (b.job_title || '').trim() || null,
+        (b.session_choice || '').trim() || null,
+        (b.heard_from || '').trim() || null,
+        (b.dietary || '').trim() || null,
+        (b.special_needs || '').trim() || null,
+        true,
+      ]
+    );
 
     return res.json({
       ok: true,
-      reg_code: row.reg_code,
-      full_name: row.full_name,
+      full_name: result.rows[0].full_name,
     });
   } catch (err) {
     console.error('[register] error', err);
@@ -120,7 +96,7 @@ app.post('/api/admin/logout', (req, res) => {
 app.get('/api/registrants', requireAdmin, async (req, res) => {
   try {
     const { rows } = await pool.query(
-      `SELECT id, reg_code, full_name, email, phone, organization, job_title,
+      `SELECT id, full_name, email, phone, organization, job_title,
               session_choice, heard_from, dietary, special_needs, created_at
        FROM registrants
        ORDER BY created_at DESC`
@@ -136,13 +112,13 @@ app.get('/api/registrants', requireAdmin, async (req, res) => {
 app.get('/api/export', requireAdmin, async (req, res) => {
   try {
     const { rows } = await pool.query(
-      `SELECT reg_code, full_name, email, phone, organization, job_title,
+      `SELECT full_name, email, phone, organization, job_title,
               session_choice, heard_from, dietary, special_needs, created_at
        FROM registrants
        ORDER BY created_at DESC`
     );
     const headers = [
-      'reg_code', 'full_name', 'email', 'phone', 'organization', 'job_title',
+      'full_name', 'email', 'phone', 'organization', 'job_title',
       'session_choice', 'heard_from', 'dietary', 'special_needs', 'created_at',
     ];
     const lines = [headers.join(',')];
