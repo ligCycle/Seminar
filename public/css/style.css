@@ -161,6 +161,15 @@ header.page-head p { color: var(--muted); margin: 0; }
 .field .req { color: var(--gold); }
 .field small { color: var(--muted); font-weight: 400; }
 
+.field-hint { font-size: 0.82rem; margin-top: 5px; min-height: 1.1em; transition: color 0.15s; }
+.field-hint.error { color: var(--danger); }
+.field-hint.ok { color: var(--success); }
+.field-hint.checking { color: var(--muted); }
+.field-hint.ok::before { content: '✓ '; }
+.field-hint.error::before { content: '✕ '; }
+input.invalid { border-color: var(--danger) !important; }
+input.valid { border-color: var(--success) !important; }
+
 input[type="text"], input[type="email"], input[type="tel"],
 input[type="password"], select, textarea {
   width: 100%;

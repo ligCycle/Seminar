@@ -7,10 +7,66 @@ function showMsg(text, type) {
   msg.className = 'msg show ' + type;
 }
 
-// เบอร์โทร: พิมพ์ได้เฉพาะตัวเลข สูงสุด 10 หลัก
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// ---------- real-time validation (บอกทันทีตอนกรอก ไม่ต้องกดปุ่ม) ----------
+const emailInput = form.querySelector('[name="email"]');
 const phoneInput = form.querySelector('[name="phone"]');
+const emailHint = document.getElementById('emailHint');
+const phoneHint = document.getElementById('phoneHint');
+
+function debounce(fn, ms) {
+  let t;
+  return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); };
+}
+
+function setHint(hintEl, inputEl, text, type) {
+  hintEl.textContent = text;
+  hintEl.className = 'field-hint' + (type ? ' ' + type : '');
+  inputEl.classList.remove('invalid', 'valid');
+  if (type === 'error') inputEl.classList.add('invalid');
+  else if (type === 'ok') inputEl.classList.add('valid');
+}
+
+async function checkAvailability(params) {
+  const q = new URLSearchParams(params).toString();
+  const res = await fetch('/api/check?' + q);
+  return res.json();
+}
+
+// อีเมล: ตรวจรูปแบบ แล้วเช็คซ้ำ
+const checkEmail = debounce(async () => {
+  const v = emailInput.value.trim();
+  if (!v) return setHint(emailHint, emailInput, '', '');
+  if (!EMAIL_RE.test(v)) return setHint(emailHint, emailInput, 'รูปแบบอีเมลไม่ถูกต้อง', 'error');
+  setHint(emailHint, emailInput, 'กำลังตรวจสอบ...', 'checking');
+  try {
+    const { emailTaken } = await checkAvailability({ email: v });
+    if (emailTaken) setHint(emailHint, emailInput, 'อีเมลนี้ถูกใช้ลงทะเบียนไปแล้ว', 'error');
+    else setHint(emailHint, emailInput, 'ใช้อีเมลนี้ได้', 'ok');
+  } catch {
+    setHint(emailHint, emailInput, '', '');
+  }
+}, 450);
+emailInput.addEventListener('input', checkEmail);
+
+// เบอร์โทร: พิมพ์ได้เฉพาะตัวเลข 10 หลัก + บอกสถานะ + เช็คซ้ำ
+const checkPhone = debounce(async () => {
+  const v = phoneInput.value.replace(/\D/g, '');
+  if (!v) return setHint(phoneHint, phoneInput, '', '');
+  if (v.length < 10) return setHint(phoneHint, phoneInput, `ต้องเป็นตัวเลข 10 หลัก (ตอนนี้ ${v.length} หลัก)`, 'error');
+  setHint(phoneHint, phoneInput, 'กำลังตรวจสอบ...', 'checking');
+  try {
+    const { phoneTaken } = await checkAvailability({ phone: v });
+    if (phoneTaken) setHint(phoneHint, phoneInput, 'เบอร์โทรนี้ถูกใช้ลงทะเบียนไปแล้ว', 'error');
+    else setHint(phoneHint, phoneInput, 'ใช้เบอร์นี้ได้', 'ok');
+  } catch {
+    setHint(phoneHint, phoneInput, '', '');
+  }
+}, 450);
 phoneInput.addEventListener('input', () => {
   phoneInput.value = phoneInput.value.replace(/\D/g, '').slice(0, 10);
+  checkPhone();
 });
 
 form.addEventListener('submit', async (e) => {

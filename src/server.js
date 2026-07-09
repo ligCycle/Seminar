@@ -103,6 +103,27 @@ app.post('/api/register', async (req, res) => {
   }
 });
 
+// ---------- API: เช็คอีเมล/เบอร์ซ้ำ (ใช้ตอนกรอกฟอร์ม เรียลไทม์) ----------
+app.get('/api/check', async (req, res) => {
+  try {
+    const email = (req.query.email || '').trim().toLowerCase();
+    const phone = (req.query.phone || '').replace(/\D/g, '');
+    const out = { emailTaken: false, phoneTaken: false };
+    if (email) {
+      const r = await pool.query('SELECT 1 FROM registrants WHERE email = $1 LIMIT 1', [email]);
+      out.emailTaken = r.rows.length > 0;
+    }
+    if (phone) {
+      const r = await pool.query('SELECT 1 FROM registrants WHERE phone = $1 LIMIT 1', [phone]);
+      out.phoneTaken = r.rows.length > 0;
+    }
+    return res.json(out);
+  } catch (err) {
+    console.error('[check] error', err);
+    return res.status(500).json({ error: 'ตรวจสอบไม่สำเร็จ' });
+  }
+});
+
 // ---------- API: Admin login / logout ----------
 app.post('/api/admin/login', (req, res) => {
   const { password } = req.body || {};
