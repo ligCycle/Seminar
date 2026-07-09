@@ -7,9 +7,11 @@ if (!connectionString) {
   console.warn('[db] ไม่พบ DATABASE_URL — ตั้งค่าใน .env หรือ Railway ก่อนใช้งาน');
 }
 
-// Railway/Cloud Postgres ส่วนใหญ่ต้องใช้ SSL แต่ Postgres local ไม่ต้อง
-const useSSL = /railway|render|heroku|amazonaws|supabase/i.test(connectionString || '')
-  || process.env.PGSSL === 'true';
+// การเชื่อมต่อภายในของ Railway (postgres.railway.internal) ไม่ใช้ SSL
+// เปิด SSL เฉพาะเมื่อสั่งชัดเจน: PGSSL=true หรือใน connection string มี sslmode=require
+// (เช่น เวลาต่อผ่าน public proxy หรือ managed DB เจ้าอื่น)
+const useSSL = process.env.PGSSL === 'true'
+  || /sslmode=require/i.test(connectionString || '');
 
 const pool = new Pool({
   connectionString,
