@@ -47,4 +47,22 @@ function requireAdmin(req, res, next) {
   return res.status(401).json({ error: 'ต้องเข้าสู่ระบบ Admin ก่อน' });
 }
 
-module.exports = { issueToken, verifyToken, checkPassword, requireAdmin, COOKIE_NAME };
+// ---------- ลิงก์ RSVP (ยืนยันการมา) เซ็นด้วย HMAC กันปลอม ----------
+// ใช้ reg_code เป็น payload แล้วเซ็น เพื่อไม่ต้องเก็บ token เพิ่มในฐานข้อมูล
+function rsvpSig(regCode) {
+  return crypto.createHmac('sha256', TOKEN_SECRET).update(`rsvp:${regCode}`).digest('hex');
+}
+
+function verifyRsvp(regCode, sig) {
+  if (!regCode || !sig) return false;
+  const expected = rsvpSig(regCode);
+  const a = Buffer.from(String(sig));
+  const b = Buffer.from(expected);
+  if (a.length !== b.length) return false;
+  return crypto.timingSafeEqual(a, b);
+}
+
+module.exports = {
+  issueToken, verifyToken, checkPassword, requireAdmin, COOKIE_NAME,
+  rsvpSig, verifyRsvp,
+};

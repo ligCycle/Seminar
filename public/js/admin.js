@@ -59,6 +59,7 @@ async function loadData() {
     allRows = r.registrants || [];
     document.getElementById('statTotal').textContent = r.total || 0;
     document.getElementById('statCheckedIn').textContent = r.checkedIn || 0;
+    document.getElementById('statRsvpYes').textContent = r.rsvpYes || 0;
     render();
   } catch {
     showMsg(dashMsg, 'ดึงข้อมูลไม่สำเร็จ', 'error');
@@ -74,7 +75,7 @@ function render() {
     : allRows;
 
   if (rows.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--muted)">ไม่พบข้อมูล</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;color:var(--muted)">ไม่พบข้อมูล</td></tr>';
     return;
   }
 
@@ -83,8 +84,13 @@ function render() {
     const badge = checkedIn
       ? '<span class="badge checked_in">มาแล้ว</span>'
       : '<span class="badge registered">ลงทะเบียน</span>';
+    let rsvp;
+    if (r.rsvp_status === 'yes') rsvp = '<span class="badge checked_in">มา</span>';
+    else if (r.rsvp_status === 'no') rsvp = '<span class="badge declined">ไม่มา</span>';
+    else rsvp = '<span class="badge registered">ยังไม่ตอบ</span>';
     return `<tr>
       <td>${badge}</td>
+      <td>${rsvp}</td>
       <td>${esc(r.full_name)}</td>
       <td>${esc(r.email)}</td>
       <td>${esc(r.phone)}</td>
@@ -94,6 +100,7 @@ function render() {
       <td>${esc(r.dietary)}</td>
       <td>${fmtDate(r.created_at)}</td>
       <td>${checkedIn ? fmtDate(r.checked_in_at) : '–'}</td>
+      <td><button class="btn secondary auto resend-btn" data-id="${r.id}" style="padding:5px 10px;font-size:0.8rem">ส่งซ้ำ</button></td>
     </tr>`;
   }).join('');
 }
@@ -220,6 +227,52 @@ resetConfirm.addEventListener('click', async () => {
     showMsg(dashMsg, 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้', 'error');
   } finally {
     resetConfirm.textContent = 'ล้างข้อมูล';
+  }
+});
+
+// ---------- ส่งอีเมล RSVP ----------
+const rsvpModal = document.getElementById('rsvpModal');
+document.getElementById('sendRsvpBtn').addEventListener('click', () => { rsvpModal.hidden = false; });
+document.getElementById('rsvpCancel').addEventListener('click', () => { rsvpModal.hidden = true; });
+rsvpModal.addEventListener('click', (e) => { if (e.target === rsvpModal) rsvpModal.hidden = true; });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !rsvpModal.hidden) rsvpModal.hidden = true; });
+
+const rsvpConfirm = document.getElementById('rsvpConfirm');
+rsvpConfirm.addEventListener('click', async () => {
+  rsvpConfirm.disabled = true;
+  rsvpConfirm.textContent = 'กำลังส่ง...';
+  try {
+    const res = await fetch('/api/admin/send-rsvp', { method: 'POST' });
+    const r = await res.json();
+    rsvpModal.hidden = true;
+    if (!res.ok) return showMsg(dashMsg, r.error || 'ส่งอีเมลไม่สำเร็จ', 'error');
+    showMsg(dashMsg, `ส่งอีเมลแล้ว: สำเร็จ ${r.sent} · ล้มเหลว ${r.failed}`, 'success');
+    loadData();
+  } catch {
+    rsvpModal.hidden = true;
+    showMsg(dashMsg, 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้', 'error');
+  } finally {
+    rsvpConfirm.disabled = false;
+    rsvpConfirm.textContent = 'ส่งอีเมล';
+  }
+});
+
+// ปุ่ม "ส่งซ้ำ" รายคน (event delegation เพราะแถวถูก render ใหม่)
+tbody.addEventListener('click', async (e) => {
+  const btn = e.target.closest('.resend-btn');
+  if (!btn) return;
+  btn.disabled = true;
+  btn.textContent = '...';
+  try {
+    const res = await fetch('/api/admin/send-rsvp/' + btn.dataset.id, { method: 'POST' });
+    const r = await res.json();
+    if (!res.ok) showMsg(dashMsg, r.error || 'ส่งไม่สำเร็จ', 'error');
+    else showMsg(dashMsg, `ส่งอีเมลถึง ${r.email} แล้ว`, 'success');
+  } catch {
+    showMsg(dashMsg, 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'ส่งซ้ำ';
   }
 });
 

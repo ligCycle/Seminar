@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ยืนยันการเข้าร่วมงาน</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Noto+Sans+Thai:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <div class="container">
+    <div class="card qr-wrap" id="content" style="margin-top:40px"></div>
+    <div class="links">
+      <a href="/">← กลับหน้าหลัก</a>
+    </div>
+  </div>
+
+  <script>
+    const a = new URLSearchParams(location.search).get('a');
+    const content = document.getElementById('content');
+    const views = {
+      yes: {
+        icon: '🎉',
+        title: 'ยืนยันแล้วว่าจะมา',
+        msg: 'ขอบคุณที่ยืนยันการเข้าร่วมงาน เราได้บันทึกไว้เรียบร้อยแล้ว<br />แล้วพบกันในวันงานนะครับ/ค่ะ',
+      },
+      no: {
+        icon: '🙏',
+        title: 'รับทราบแล้ว',
+        msg: 'ขอบคุณที่แจ้งให้ทราบครับ เราได้บันทึกว่าคุณไม่สะดวกมาแล้ว<br />ไว้พบกันโอกาสหน้านะครับ/ค่ะ',
+      },
+      error: {
+        icon: '⚠️',
+        title: 'ลิงก์ไม่ถูกต้อง',
+        msg: 'ลิงก์นี้ไม่ถูกต้องหรือหมดอายุ กรุณาใช้ลิงก์จากอีเมลที่ได้รับ<br />หรือติดต่อผู้จัดงานครับ',
+      },
+    };
+    const v = views[a] || views.error;
+    content.innerHTML = `
+      <div class="icon" style="font-size:3rem">${v.icon}</div>
+      <h2 style="margin:12px 0 8px">${v.title}</h2>
+      <p style="color:var(--muted)">${v.msg}</p>
+    `;
+  </script>
+</body>
+</html>

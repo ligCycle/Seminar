@@ -34,12 +34,14 @@
     <div class="stats">
       <div class="stat"><div class="num" id="statTotal">0</div><div class="label">ลงทะเบียนทั้งหมด</div></div>
       <div class="stat"><div class="num" id="statCheckedIn">0</div><div class="label">เช็คอินแล้ว (มางาน)</div></div>
+      <div class="stat"><div class="num" id="statRsvpYes">0</div><div class="label">ตอบว่าจะมา</div></div>
     </div>
 
     <div class="toolbar">
       <input type="text" id="search" placeholder="ค้นหา ชื่อ / อีเมล / องค์กร" />
       <a class="btn secondary auto" href="/">+ ไปหน้าสมัคร</a>
       <a class="btn secondary auto" href="/checkin.html">📷 เช็คอินหน้างาน</a>
+      <button class="btn secondary auto" id="sendRsvpBtn">📧 ส่งอีเมลถามการมา</button>
       <button class="btn secondary auto" id="refreshBtn">รีเฟรช</button>
       <button class="btn secondary auto" id="exportBtn">export CSV</button>
       <button class="btn secondary auto" id="logoutBtn">ออกจากระบบ</button>
@@ -52,9 +54,9 @@
       <table>
         <thead>
           <tr>
-            <th>สถานะ</th><th>ชื่อ-นามสกุล</th><th>อีเมล</th><th>เบอร์โทร</th>
+            <th>สถานะ</th><th>ตอบรับ</th><th>ชื่อ-นามสกุล</th><th>อีเมล</th><th>เบอร์โทร</th>
             <th>องค์กร</th><th>ตำแหน่ง</th><th>รอบ</th><th>อาหาร</th>
-            <th>เวลาลงทะเบียน</th><th>เวลาเช็คอิน</th>
+            <th>เวลาลงทะเบียน</th><th>เวลาเช็คอิน</th><th></th>
           </tr>
         </thead>
         <tbody id="tbody"></tbody>
@@ -103,6 +105,19 @@
       <div class="modal-actions">
         <button class="btn secondary auto" id="resetCancel">ยกเลิก</button>
         <button class="btn danger auto" id="resetConfirm" disabled>ล้างข้อมูล</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Modal ยืนยันการส่งอีเมล RSVP ===== -->
+  <div class="modal-overlay" id="rsvpModal" hidden>
+    <div class="modal" style="border-top-color: var(--gold)">
+      <div class="modal-icon">📧</div>
+      <h2>ส่งอีเมลถามการมา?</h2>
+      <p>ระบบจะส่งอีเมลถามการเข้าร่วมไปยัง<b>ผู้ที่ยังไม่ตอบ</b>ทุกคน (คนที่ตอบแล้วจะไม่ถูกส่งซ้ำ)</p>
+      <div class="modal-actions">
+        <button class="btn secondary auto" id="rsvpCancel">ยกเลิก</button>
+        <button class="btn auto" id="rsvpConfirm">ส่งอีเมล</button>
       </div>
     </div>
   </div>

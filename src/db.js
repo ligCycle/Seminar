@@ -55,7 +55,9 @@ async function initDb() {
       pdpa_consent   BOOLEAN NOT NULL DEFAULT FALSE,
       status         TEXT NOT NULL DEFAULT 'registered',
       created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
-      checked_in_at  TIMESTAMPTZ
+      checked_in_at  TIMESTAMPTZ,
+      rsvp_status    TEXT,
+      rsvp_at        TIMESTAMPTZ
     );
   `);
 
@@ -65,6 +67,8 @@ async function initDb() {
     `ALTER TABLE registrants ADD COLUMN IF NOT EXISTS reg_code TEXT;`,
     `ALTER TABLE registrants ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'registered';`,
     `ALTER TABLE registrants ADD COLUMN IF NOT EXISTS checked_in_at TIMESTAMPTZ;`,
+    `ALTER TABLE registrants ADD COLUMN IF NOT EXISTS rsvp_status TEXT;`,
+    `ALTER TABLE registrants ADD COLUMN IF NOT EXISTS rsvp_at TIMESTAMPTZ;`,
   ];
   for (const sql of addColumns) {
     try {
