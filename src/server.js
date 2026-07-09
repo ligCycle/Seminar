@@ -220,11 +220,22 @@ app.use(express.static(path.join(__dirname, '..', 'public')));
 app.get('/healthz', (req, res) => res.json({ ok: true }));
 
 // ---------- start ----------
-initDb()
-  .then(() => {
-    app.listen(PORT, () => console.log(`[server] ทำงานที่ port ${PORT}`));
-  })
-  .catch((err) => {
-    console.error('[server] เริ่มระบบไม่สำเร็จ:', err);
-    process.exit(1);
-  });
+// เปิด HTTP server ก่อน เพื่อให้ healthcheck (/healthz) ผ่านทันที
+// แล้วค่อยต่อ DB + สร้างตารางแบบ retry เบื้องหลัง — ไม่ crash วนซ้ำถ้า DB ยังไม่พร้อม
+app.listen(PORT, () => console.log(`[server] ทำงานที่ port ${PORT}`));
+
+async function initWithRetry(attempt = 1) {
+  try {
+    await initDb();
+    console.log('[db] เชื่อมต่อฐานข้อมูลสำเร็จ');
+  } catch (err) {
+    const wait = Math.min(30000, attempt * 3000);
+    console.error(
+      `[db] ต่อฐานข้อมูล/สร้างตารางไม่สำเร็จ (ครั้งที่ ${attempt}) — ลองใหม่ใน ${wait / 1000}s:`,
+      err.message
+    );
+    console.error('[db] ตรวจว่าได้เพิ่ม PostgreSQL และตั้งค่า DATABASE_URL แล้วหรือยัง');
+    setTimeout(() => initWithRetry(attempt + 1), wait);
+  }
+}
+initWithRetry();
