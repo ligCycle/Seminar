@@ -7,6 +7,19 @@ if (!connectionString) {
   console.warn('[db] ไม่พบ DATABASE_URL — ตั้งค่าใน .env หรือ Railway ก่อนใช้งาน');
 }
 
+// log host ที่จะต่อ (ซ่อนรหัสผ่าน) เพื่อยืนยันว่าต่อถูกที่ — ควรเป็น postgres.railway.internal ไม่ใช่ localhost
+function describeHost(cs) {
+  try {
+    const u = new URL(cs);
+    return `${u.hostname}:${u.port || 5432}${u.pathname}`;
+  } catch {
+    return '(อ่าน DATABASE_URL ไม่ได้)';
+  }
+}
+if (connectionString) {
+  console.log('[db] จะเชื่อมต่อไปที่:', describeHost(connectionString));
+}
+
 // การเชื่อมต่อภายในของ Railway (postgres.railway.internal) ไม่ใช้ SSL
 // เปิด SSL เฉพาะเมื่อสั่งชัดเจน: PGSSL=true หรือใน connection string มี sslmode=require
 // (เช่น เวลาต่อผ่าน public proxy หรือ managed DB เจ้าอื่น)
