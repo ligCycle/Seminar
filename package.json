@@ -1,7 +1,7 @@
 {
   "name": "seminar-registration",
   "version": "1.0.0",
-  "description": "เว็บลงทะเบียนงานสัมมนา พร้อม QR check-in และหน้า Admin",
+  "description": "เว็บลงทะเบียนงานสัมมนา พร้อมหน้า Admin ดูรายชื่อผู้ลงทะเบียน",
   "main": "src/server.js",
   "type": "commonjs",
   "scripts": {
