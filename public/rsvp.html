@@ -18,31 +18,69 @@
   </div>
 
   <script>
-    const a = new URLSearchParams(location.search).get('a');
+    const params = new URLSearchParams(location.search);
+    const code = params.get('code');
+    const sig = params.get('sig');
+    const a = params.get('a'); // 'yes' | 'no'
     const content = document.getElementById('content');
-    const views = {
-      yes: {
-        icon: '🎉',
-        title: 'ยืนยันแล้วว่าจะมา',
-        msg: 'ขอบคุณที่ยืนยันการเข้าร่วมงาน เราได้บันทึกไว้เรียบร้อยแล้ว<br />แล้วพบกันในวันงานนะครับ/ค่ะ',
-      },
-      no: {
-        icon: '🙏',
-        title: 'รับทราบแล้ว',
-        msg: 'ขอบคุณที่แจ้งให้ทราบครับ เราได้บันทึกว่าคุณไม่สะดวกมาแล้ว<br />ไว้พบกันโอกาสหน้านะครับ/ค่ะ',
-      },
-      error: {
-        icon: '⚠️',
-        title: 'ลิงก์ไม่ถูกต้อง',
-        msg: 'ลิงก์นี้ไม่ถูกต้องหรือหมดอายุ กรุณาใช้ลิงก์จากอีเมลที่ได้รับ<br />หรือติดต่อผู้จัดงานครับ',
-      },
-    };
-    const v = views[a] || views.error;
-    content.innerHTML = `
-      <div class="icon" style="font-size:3rem">${v.icon}</div>
-      <h2 style="margin:12px 0 8px">${v.title}</h2>
-      <p style="color:var(--muted)">${v.msg}</p>
-    `;
+
+    function show(html) { content.innerHTML = html; }
+
+    function showError(msg) {
+      show(`
+        <div class="icon" style="font-size:3rem">⚠️</div>
+        <h2 style="margin:12px 0 8px">ลิงก์ไม่ถูกต้อง</h2>
+        <p style="color:var(--muted)">${msg || 'ลิงก์นี้ไม่ถูกต้องหรือหมดอายุ กรุณาใช้ลิงก์จากอีเมลที่ได้รับ'}</p>
+      `);
+    }
+
+    function showResult(ans) {
+      const v = ans === 'yes'
+        ? { icon: '🎉', title: 'ยืนยันแล้วว่าจะมา', msg: 'ขอบคุณที่ยืนยันการเข้าร่วมงาน เราได้บันทึกไว้เรียบร้อยแล้ว<br />แล้วพบกันในวันงานนะครับ/ค่ะ' }
+        : { icon: '🙏', title: 'รับทราบแล้ว', msg: 'ขอบคุณที่แจ้งให้ทราบครับ เราได้บันทึกว่าคุณไม่สะดวกมาแล้ว<br />ไว้พบกันโอกาสหน้านะครับ/ค่ะ' };
+      show(`
+        <div class="icon" style="font-size:3rem">${v.icon}</div>
+        <h2 style="margin:12px 0 8px">${v.title}</h2>
+        <p style="color:var(--muted)">${v.msg}</p>
+      `);
+    }
+
+    async function submit(answer, btn) {
+      const buttons = content.querySelectorAll('button');
+      buttons.forEach((b) => (b.disabled = true));
+      if (btn) btn.textContent = 'กำลังบันทึก...';
+      try {
+        const res = await fetch('/api/rsvp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code, sig, a: answer }),
+        });
+        const r = await res.json();
+        if (!res.ok) return showError(r.error);
+        showResult(r.a);
+      } catch {
+        showError('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ กรุณาลองใหม่');
+      }
+    }
+
+    // ลิงก์ไม่ครบ → ผิด
+    if (!code || !sig || (a !== 'yes' && a !== 'no')) {
+      showError();
+    } else {
+      // แสดงหน้าให้ "กดยืนยันอีกครั้ง" — การเปิดลิงก์เฉยๆ จะไม่บันทึกอะไร (กันตัวสแกนอีเมลกดเอง)
+      const label = a === 'yes' ? 'ยืนยันว่าจะมา ✅' : 'ยืนยันว่าไม่สะดวกมา ❌';
+      const other = a === 'yes' ? 'no' : 'yes';
+      const otherLabel = a === 'yes' ? 'ไม่สะดวกมา' : 'จะมา';
+      show(`
+        <div class="icon" style="font-size:2.6rem">📩</div>
+        <h2 style="margin:12px 0 6px">ยืนยันการเข้าร่วมงาน</h2>
+        <p style="color:var(--muted);margin-bottom:20px">กรุณากดปุ่มด้านล่างเพื่อยืนยันคำตอบของคุณ</p>
+        <button class="btn" id="mainBtn">${label}</button>
+        <p style="margin-top:16px"><a href="#" id="switchLink" style="color:var(--muted);font-size:0.9rem">เปลี่ยนเป็น “${otherLabel}”</a></p>
+      `);
+      document.getElementById('mainBtn').addEventListener('click', (e) => submit(a, e.target));
+      document.getElementById('switchLink').addEventListener('click', (e) => { e.preventDefault(); submit(other); });
+    }
   </script>
 </body>
 </html>

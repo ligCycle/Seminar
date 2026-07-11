@@ -180,13 +180,15 @@ app.post('/api/admin/reset', requireAdmin, async (req, res) => {
 // ---------- API: ส่งอีเมลถามการมา RSVP ให้ทุกคนที่ยังไม่ตอบ (admin) ----------
 app.post('/api/admin/send-rsvp', requireAdmin, async (req, res) => {
   if (!isConfigured()) {
-    return res.status(400).json({ error: 'ยังไม่ได้ตั้งค่าอีเมล — ตั้ง GMAIL_USER และ GMAIL_APP_PASSWORD ก่อน' });
+    return res.status(400).json({ error: 'ยังไม่ได้ตั้งค่าอีเมล — ตั้ง BREVO_API_KEY และ BREVO_SENDER ก่อน (ดูวิธีใน README)' });
   }
   try {
     const baseUrl = `${req.protocol}://${req.get('host')}`;
     const { rows } = await pool.query(
       `SELECT reg_code, full_name, email FROM registrants WHERE rsvp_status IS NULL ORDER BY created_at`
     );
+    // คนที่ตอบแล้ว (ถูกข้าม ไม่ส่งซ้ำ)
+    const skip = await pool.query('SELECT COUNT(*)::int AS c FROM registrants WHERE rsvp_status IS NOT NULL');
     let sent = 0;
     let failed = 0;
     let lastError = null;
@@ -200,7 +202,7 @@ app.post('/api/admin/send-rsvp', requireAdmin, async (req, res) => {
         console.error(`[send-rsvp] ส่งถึง ${reg.email} ไม่สำเร็จ:`, e.message);
       }
     }
-    return res.json({ ok: true, sent, failed, skipped: 0, error: lastError });
+    return res.json({ ok: true, sent, failed, skipped: skip.rows[0].c, error: lastError });
   } catch (err) {
     console.error('[send-rsvp] error', err);
     return res.status(500).json({ error: 'ส่งอีเมลไม่สำเร็จ' });
@@ -210,7 +212,7 @@ app.post('/api/admin/send-rsvp', requireAdmin, async (req, res) => {
 // ---------- API: ส่งอีเมล RSVP ซ้ำรายคน (admin) ----------
 app.post('/api/admin/send-rsvp/:id', requireAdmin, async (req, res) => {
   if (!isConfigured()) {
-    return res.status(400).json({ error: 'ยังไม่ได้ตั้งค่าอีเมล — ตั้ง GMAIL_USER และ GMAIL_APP_PASSWORD ก่อน' });
+    return res.status(400).json({ error: 'ยังไม่ได้ตั้งค่าอีเมล — ตั้ง BREVO_API_KEY และ BREVO_SENDER ก่อน (ดูวิธีใน README)' });
   }
   try {
     const { rows } = await pool.query(
@@ -319,24 +321,27 @@ app.post('/api/checkin', requireAdmin, async (req, res) => {
   }
 });
 
-// ---------- API: ตอบรับการมา (RSVP) — public, ผู้รับกดจากลิงก์ในอีเมล ----------
-app.get('/api/rsvp', async (req, res) => {
+// ---------- API: ตอบรับการมา (RSVP) — public ----------
+// ใช้ POST (ไม่ใช่ GET) เพื่อไม่ให้ตัวสแกน/พรีวิวลิงก์ในอีเมลกดตอบอัตโนมัติ
+// ผู้รับกดลิงก์ในอีเมล → เปิดหน้า /rsvp.html → กดปุ่มยืนยัน → หน้าเว็บค่อยยิง POST นี้
+app.post('/api/rsvp', async (req, res) => {
   try {
-    const code = (req.query.code || '').toString().trim().toUpperCase();
-    const sig = (req.query.sig || '').toString().trim();
-    const a = (req.query.a || '').toString().trim();
+    const b = req.body || {};
+    const code = (b.code || '').toString().trim().toUpperCase();
+    const sig = (b.sig || '').toString().trim();
+    const a = (b.a || '').toString().trim();
     if (!verifyRsvp(code, sig) || (a !== 'yes' && a !== 'no')) {
-      return res.redirect('/rsvp.html?a=error');
+      return res.status(400).json({ error: 'ลิงก์ไม่ถูกต้องหรือหมดอายุ' });
     }
     const upd = await pool.query(
       `UPDATE registrants SET rsvp_status = $1, rsvp_at = now() WHERE reg_code = $2`,
       [a, code]
     );
-    if (upd.rowCount === 0) return res.redirect('/rsvp.html?a=error');
-    return res.redirect(`/rsvp.html?a=${a}`);
+    if (upd.rowCount === 0) return res.status(404).json({ error: 'ไม่พบข้อมูลการลงทะเบียน' });
+    return res.json({ ok: true, a });
   } catch (err) {
     console.error('[rsvp] error', err);
-    return res.redirect('/rsvp.html?a=error');
+    return res.status(500).json({ error: 'บันทึกไม่สำเร็จ กรุณาลองใหม่' });
   }
 });
 

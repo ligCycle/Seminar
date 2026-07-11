@@ -53,8 +53,10 @@ function esc(s) {
 
 function buildHtml(reg, baseUrl) {
   const sig = rsvpSig(reg.reg_code);
-  const yesUrl = `${baseUrl}/api/rsvp?code=${encodeURIComponent(reg.reg_code)}&sig=${sig}&a=yes`;
-  const noUrl = `${baseUrl}/api/rsvp?code=${encodeURIComponent(reg.reg_code)}&sig=${sig}&a=no`;
+  // ลิงก์ชี้ไปหน้ายืนยัน (static page) — การเปิดลิงก์เฉยๆ ไม่เปลี่ยนสถานะ ต้องกดปุ่มในหน้าก่อน
+  const base = `${baseUrl}/rsvp.html?code=${encodeURIComponent(reg.reg_code)}&sig=${sig}`;
+  const yesUrl = `${base}&a=yes`;
+  const noUrl = `${base}&a=no`;
   const name = esc(reg.full_name);
   return `
   <div style="background:#0a0908;color:#f5f0e6;font-family:'Segoe UI',Tahoma,sans-serif;padding:28px;border-radius:14px;max-width:520px;margin:0 auto">

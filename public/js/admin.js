@@ -246,10 +246,13 @@ rsvpConfirm.addEventListener('click', async () => {
     const r = await res.json();
     rsvpModal.hidden = true;
     if (!res.ok) return showMsg(dashMsg, r.error || 'ส่งอีเมลไม่สำเร็จ', 'error');
+    const skipNote = r.skipped > 0 ? ` (ข้าม ${r.skipped} คนที่ตอบแล้ว)` : '';
     if (r.failed > 0) {
       showMsg(dashMsg, `ส่งไม่สำเร็จ ${r.failed} ฉบับ (สำเร็จ ${r.sent}) — สาเหตุ: ${r.error || 'ไม่ทราบ'}`, 'error');
+    } else if (r.sent === 0 && r.skipped > 0) {
+      showMsg(dashMsg, `ทุกคนตอบรับแล้ว — ไม่มีอีเมลต้องส่ง (ข้าม ${r.skipped} คน)`, 'success');
     } else {
-      showMsg(dashMsg, `ส่งอีเมลสำเร็จ ${r.sent} ฉบับ 🎉`, 'success');
+      showMsg(dashMsg, `ส่งอีเมลสำเร็จ ${r.sent} ฉบับ 🎉${skipNote}`, 'success');
     }
     loadData();
   } catch {
