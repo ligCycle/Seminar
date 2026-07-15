@@ -129,7 +129,8 @@ otpSendBtn.addEventListener('click', async () => {
     });
     const r = await res.json();
     if (!res.ok) {
-      setHint(otpHint, otpInput, r.error || 'ส่ง OTP ไม่สำเร็จ', 'error');
+      // โชว์ที่ phoneHint (เห็นได้เสมอ) เพราะ otpGroup ยังซ่อนอยู่
+      setHint(phoneHint, phoneInput, r.error || 'ส่ง OTP ไม่สำเร็จ', 'error');
       otpSendBtn.disabled = false;
       otpSendBtn.textContent = 'ส่ง OTP';
       return;
@@ -143,7 +144,7 @@ otpSendBtn.addEventListener('click', async () => {
     }
     startCooldown(60);
   } catch {
-    setHint(otpHint, otpInput, 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้', 'error');
+    setHint(phoneHint, phoneInput, 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้', 'error');
     otpSendBtn.disabled = false;
     otpSendBtn.textContent = 'ส่ง OTP';
   }
