@@ -407,6 +407,23 @@ tbody tr:hover { background: var(--card-2); }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes popIn { from { opacity: 0; transform: translateY(10px) scale(0.97); } to { opacity: 1; transform: none; } }
 
+/* ---------- verified phone banner (step 2) ---------- */
+.verified-phone {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  background: rgba(74, 222, 128, 0.12);
+  border: 1px solid var(--success);
+  border-radius: 9px;
+  padding: 10px 14px;
+  margin-bottom: 18px;
+  font-size: 0.92rem;
+}
+.verified-phone b { color: var(--success); }
+.verified-phone a { color: var(--gold); font-size: 0.88rem; }
+
 /* ---------- RSVP breakdown bar ---------- */
 .rsvp-bar {
   display: flex;
