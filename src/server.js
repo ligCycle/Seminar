@@ -7,7 +7,7 @@ const QRCode = require('qrcode');
 
 const { pool, initDb, genRegCode } = require('./db');
 const { issueToken, checkPassword, requireAdmin, COOKIE_NAME, verifyRsvp } = require('./auth');
-const { isConfigured, sendRsvpEmail } = require('./mailer');
+const { isConfigured, sendRsvpEmail, sendReminderEmail } = require('./mailer');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -226,6 +226,35 @@ app.post('/api/admin/send-rsvp/:id', requireAdmin, async (req, res) => {
   } catch (err) {
     console.error('[send-rsvp/:id] error', err);
     return res.status(500).json({ error: 'ส่งอีเมลไม่สำเร็จ: ' + err.message });
+  }
+});
+
+// ---------- API: ส่งอีเมลเตือนก่อนวันงาน ให้คนที่ตอบว่าจะมา (admin) ----------
+app.post('/api/admin/send-reminder', requireAdmin, async (req, res) => {
+  if (!isConfigured()) {
+    return res.status(400).json({ error: 'ยังไม่ได้ตั้งค่าอีเมล — ตั้ง BREVO_API_KEY และ BREVO_SENDER ก่อน (ดูวิธีใน README)' });
+  }
+  try {
+    const { rows } = await pool.query(
+      `SELECT reg_code, full_name, email FROM registrants WHERE rsvp_status = 'yes' ORDER BY created_at`
+    );
+    let sent = 0;
+    let failed = 0;
+    let lastError = null;
+    for (const reg of rows) {
+      try {
+        await sendReminderEmail(reg);
+        sent++;
+      } catch (e) {
+        failed++;
+        lastError = e.message;
+        console.error(`[send-reminder] ส่งถึง ${reg.email} ไม่สำเร็จ:`, e.message);
+      }
+    }
+    return res.json({ ok: true, sent, failed, error: lastError });
+  } catch (err) {
+    console.error('[send-reminder] error', err);
+    return res.status(500).json({ error: 'ส่งอีเมลเตือนไม่สำเร็จ' });
   }
 });
 

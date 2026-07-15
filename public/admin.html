@@ -37,11 +37,46 @@
       <div class="stat"><div class="num" id="statRsvpYes">0</div><div class="label">ตอบว่าจะมา</div></div>
     </div>
 
+    <!-- ===== การตอบรับ (RSVP insights) ===== -->
+    <div class="card" id="rsvpPanel" style="margin-bottom:20px">
+      <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;align-items:baseline">
+        <h3 style="margin:0;color:var(--gold-light)">การตอบรับ (RSVP)</h3>
+        <span style="color:var(--muted);font-size:0.9rem">ตอบกลับแล้ว <b id="rsvpRate" style="color:var(--gold-light)">0%</b> ของผู้ลงทะเบียน</span>
+      </div>
+
+      <div class="rsvp-bar" id="rsvpBar" style="margin:14px 0 10px">
+        <div class="seg yes" id="segYes"></div>
+        <div class="seg no" id="segNo"></div>
+        <div class="seg pending" id="segPending"></div>
+      </div>
+      <div style="display:flex;gap:18px;flex-wrap:wrap;font-size:0.9rem;color:var(--muted)">
+        <span><span class="dot yes"></span> ตอบว่ามา <b id="cntYes" style="color:var(--text)">0</b></span>
+        <span><span class="dot no"></span> ตอบว่าไม่มา <b id="cntNo" style="color:var(--text)">0</b></span>
+        <span><span class="dot pending"></span> ยังไม่ตอบ <b id="cntPending" style="color:var(--text)">0</b></span>
+      </div>
+
+      <div style="border-top:1px solid var(--border);margin-top:16px;padding-top:14px;display:flex;gap:28px;flex-wrap:wrap">
+        <div>
+          <div style="color:var(--muted);font-size:0.85rem">คาดว่าจะมา (ช่วงประเมิน)</div>
+          <div style="font-family:var(--font-display);font-size:1.6rem;color:var(--gold)" id="estimate">0–0 คน</div>
+        </div>
+        <div>
+          <div style="color:var(--muted);font-size:0.85rem">ตอบว่ามาแต่ยังไม่เช็คอิน (no-show)</div>
+          <div style="font-family:var(--font-display);font-size:1.6rem;color:var(--danger)" id="noShow">0</div>
+        </div>
+        <div>
+          <div style="color:var(--muted);font-size:0.85rem">เช็คอินแต่ไม่ได้ตอบว่ามา</div>
+          <div style="font-family:var(--font-display);font-size:1.6rem;color:var(--gold-light)" id="surprise">0</div>
+        </div>
+      </div>
+    </div>
+
     <div class="toolbar">
       <input type="text" id="search" placeholder="ค้นหา ชื่อ / อีเมล / องค์กร" />
       <a class="btn secondary auto" href="/">+ ไปหน้าสมัคร</a>
       <a class="btn secondary auto" href="/checkin.html">📷 เช็คอินหน้างาน</a>
       <button class="btn secondary auto" id="sendRsvpBtn">📧 ส่งอีเมลถามการมา</button>
+      <button class="btn secondary auto" id="sendReminderBtn">📨 ส่งเตือนก่อนงาน</button>
       <button class="btn secondary auto" id="refreshBtn">รีเฟรช</button>
       <button class="btn secondary auto" id="exportBtn">export CSV</button>
       <button class="btn secondary auto" id="logoutBtn">ออกจากระบบ</button>
@@ -118,6 +153,19 @@
       <div class="modal-actions">
         <button class="btn secondary auto" id="rsvpCancel">ยกเลิก</button>
         <button class="btn auto" id="rsvpConfirm">ส่งอีเมล</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Modal ยืนยันการส่งอีเมลเตือนก่อนงาน ===== -->
+  <div class="modal-overlay" id="reminderModal" hidden>
+    <div class="modal" style="border-top-color: var(--gold)">
+      <div class="modal-icon">📨</div>
+      <h2>ส่งอีเมลเตือนก่อนงาน?</h2>
+      <p>ระบบจะส่งอีเมลเตือน (พร้อม QR เช็คอิน) ไปยัง<b>ผู้ที่ตอบว่าจะมา</b>ทุกคน</p>
+      <div class="modal-actions">
+        <button class="btn secondary auto" id="reminderCancel">ยกเลิก</button>
+        <button class="btn auto" id="reminderConfirm">ส่งเตือน</button>
       </div>
     </div>
   </div>

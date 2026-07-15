@@ -61,6 +61,7 @@ async function loadData() {
     document.getElementById('statCheckedIn').textContent = r.checkedIn || 0;
     document.getElementById('statRsvpYes').textContent = r.rsvpYes || 0;
     render();
+    renderRsvpInsights(allRows);
   } catch {
     showMsg(dashMsg, 'ดึงข้อมูลไม่สำเร็จ', 'error');
   }
@@ -153,6 +154,34 @@ function downloadFbQr(dataUrl) {
   a.href = dataUrl;
   a.download = 'qr-feedback.png';
   a.click();
+}
+
+// ---------- คำนวณสรุปการตอบรับ (RSVP insights) จากข้อมูลที่มีอยู่ ----------
+function renderRsvpInsights(rows) {
+  const total = rows.length;
+  const yes = rows.filter((r) => r.rsvp_status === 'yes').length;
+  const no = rows.filter((r) => r.rsvp_status === 'no').length;
+  const pending = total - yes - no;
+  const responded = yes + no;
+  const rate = total ? Math.round((responded / total) * 100) : 0;
+
+  // no-show = ตอบว่ามาแต่ยังไม่เช็คอิน ; surprise = เช็คอินแต่ไม่ได้ตอบว่ามา
+  const noShow = rows.filter((r) => r.rsvp_status === 'yes' && r.status !== 'checked_in').length;
+  const surprise = rows.filter((r) => r.status === 'checked_in' && r.rsvp_status !== 'yes').length;
+
+  const pct = (n) => (total ? (n / total) * 100 : 0);
+  document.getElementById('segYes').style.width = pct(yes) + '%';
+  document.getElementById('segNo').style.width = pct(no) + '%';
+  document.getElementById('segPending').style.width = pct(pending) + '%';
+
+  document.getElementById('rsvpRate').textContent = rate + '%';
+  document.getElementById('cntYes').textContent = yes;
+  document.getElementById('cntNo').textContent = no;
+  document.getElementById('cntPending').textContent = pending;
+  // คาดว่าจะมา: อย่างน้อย = คนที่ตอบว่ามา, อย่างมาก = ตอบว่ามา + ยังไม่ตอบ
+  document.getElementById('estimate').textContent = `${yes}–${yes + pending} คน`;
+  document.getElementById('noShow').textContent = noShow;
+  document.getElementById('surprise').textContent = surprise;
 }
 
 function esc(s) {
@@ -261,6 +290,38 @@ rsvpConfirm.addEventListener('click', async () => {
   } finally {
     rsvpConfirm.disabled = false;
     rsvpConfirm.textContent = 'ส่งอีเมล';
+  }
+});
+
+// ---------- ส่งอีเมลเตือนก่อนงาน (ให้คนที่ตอบว่าจะมา) ----------
+const reminderModal = document.getElementById('reminderModal');
+document.getElementById('sendReminderBtn').addEventListener('click', () => { reminderModal.hidden = false; });
+document.getElementById('reminderCancel').addEventListener('click', () => { reminderModal.hidden = true; });
+reminderModal.addEventListener('click', (e) => { if (e.target === reminderModal) reminderModal.hidden = true; });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !reminderModal.hidden) reminderModal.hidden = true; });
+
+const reminderConfirm = document.getElementById('reminderConfirm');
+reminderConfirm.addEventListener('click', async () => {
+  reminderConfirm.disabled = true;
+  reminderConfirm.textContent = 'กำลังส่ง...';
+  try {
+    const res = await fetch('/api/admin/send-reminder', { method: 'POST' });
+    const r = await res.json();
+    reminderModal.hidden = true;
+    if (!res.ok) return showMsg(dashMsg, r.error || 'ส่งอีเมลไม่สำเร็จ', 'error');
+    if (r.sent === 0 && r.failed === 0) {
+      showMsg(dashMsg, 'ยังไม่มีใครตอบว่าจะมา — ไม่มีอีเมลต้องส่ง', 'success');
+    } else if (r.failed > 0) {
+      showMsg(dashMsg, `ส่งเตือนไม่สำเร็จ ${r.failed} ฉบับ (สำเร็จ ${r.sent}) — สาเหตุ: ${r.error || 'ไม่ทราบ'}`, 'error');
+    } else {
+      showMsg(dashMsg, `ส่งอีเมลเตือนสำเร็จ ${r.sent} ฉบับ 📨`, 'success');
+    }
+  } catch {
+    reminderModal.hidden = true;
+    showMsg(dashMsg, 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้', 'error');
+  } finally {
+    reminderConfirm.disabled = false;
+    reminderConfirm.textContent = 'ส่งเตือน';
   }
 });
 

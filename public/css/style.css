@@ -384,6 +384,26 @@ tbody tr:hover { background: var(--card-2); }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes popIn { from { opacity: 0; transform: translateY(10px) scale(0.97); } to { opacity: 1; transform: none; } }
 
+/* ---------- RSVP breakdown bar ---------- */
+.rsvp-bar {
+  display: flex;
+  width: 100%;
+  height: 16px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--card-2);
+  border: 1px solid var(--border);
+}
+.rsvp-bar .seg { height: 100%; transition: width 0.3s ease; }
+.rsvp-bar .seg.yes { background: var(--success); }
+.rsvp-bar .seg.no { background: var(--danger); }
+.rsvp-bar .seg.pending { background: #4a4436; }
+
+.dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
+.dot.yes { background: var(--success); }
+.dot.no { background: var(--danger); }
+.dot.pending { background: #4a4436; }
+
 /* ---------- footer ---------- */
 .foot { text-align: center; color: var(--muted); font-size: 0.85rem; margin-top: 28px; }
 .foot .brands { color: var(--gold-light); letter-spacing: 1px; font-weight: 700; margin-bottom: 6px; }
