@@ -66,7 +66,121 @@ const checkPhone = debounce(async () => {
 }, 450);
 phoneInput.addEventListener('input', () => {
   phoneInput.value = phoneInput.value.replace(/\D/g, '').slice(0, 10);
+  resetPhoneVerification(); // แก้เบอร์ = ต้องยืนยันใหม่
   checkPhone();
+});
+
+// ---------- ยืนยันเบอร์ด้วย OTP ----------
+const otpSendBtn = document.getElementById('otpSendBtn');
+const otpVerifyBtn = document.getElementById('otpVerifyBtn');
+const otpGroup = document.getElementById('otpGroup');
+const otpInput = document.getElementById('otpInput');
+const otpHint = document.getElementById('otpHint');
+
+let phoneToken = null;      // ได้จาก /api/otp/verify — แนบตอนลงทะเบียน
+let cooldownTimer = null;
+
+function resetPhoneVerification() {
+  if (phoneToken === null && otpGroup.style.display === 'none') return;
+  phoneToken = null;
+  otpGroup.style.display = 'none';
+  otpInput.value = '';
+  otpInput.disabled = false;
+  otpVerifyBtn.disabled = false;
+  otpVerifyBtn.textContent = 'ยืนยัน';
+  setHint(otpHint, otpInput, '', '');
+  if (!cooldownTimer) { otpSendBtn.disabled = false; otpSendBtn.textContent = 'ส่ง OTP'; }
+}
+
+function startCooldown(sec) {
+  otpSendBtn.disabled = true;
+  let left = sec;
+  otpSendBtn.textContent = `ส่งใหม่ (${left})`;
+  clearInterval(cooldownTimer);
+  cooldownTimer = setInterval(() => {
+    left -= 1;
+    if (left <= 0) {
+      clearInterval(cooldownTimer);
+      cooldownTimer = null;
+      otpSendBtn.disabled = !!phoneToken; // ถ้ายืนยันแล้วก็ปิดไว้
+      otpSendBtn.textContent = phoneToken ? 'ยืนยันแล้ว ✓' : 'ส่ง OTP อีกครั้ง';
+    } else {
+      otpSendBtn.textContent = `ส่งใหม่ (${left})`;
+    }
+  }, 1000);
+}
+
+otpSendBtn.addEventListener('click', async () => {
+  const phone = phoneInput.value.replace(/\D/g, '');
+  if (!/^\d{10}$/.test(phone)) {
+    return setHint(phoneHint, phoneInput, 'กรอกเบอร์ 10 หลักก่อนขอ OTP', 'error');
+  }
+  otpSendBtn.disabled = true;
+  otpSendBtn.textContent = 'กำลังส่ง...';
+  try {
+    const res = await fetch('/api/otp/send', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone }),
+    });
+    const r = await res.json();
+    if (!res.ok) {
+      setHint(otpHint, otpInput, r.error || 'ส่ง OTP ไม่สำเร็จ', 'error');
+      otpSendBtn.disabled = false;
+      otpSendBtn.textContent = 'ส่ง OTP';
+      return;
+    }
+    otpGroup.style.display = 'block';
+    otpInput.focus();
+    if (r.devCode) {
+      // dev-mode: ยังไม่ได้ตั้งค่า SMS จริง — โชว์รหัสให้ทดสอบ
+      setHint(otpHint, otpInput, `โหมดทดสอบ: รหัสคือ ${r.devCode} (ยังไม่ได้ส่ง SMS จริง)`, 'ok');
+    } else {
+      setHint(otpHint, otpInput, 'ส่งรหัสไปที่เบอร์ของคุณแล้ว กรุณากรอกรหัส', 'ok');
+    }
+    startCooldown(60);
+  } catch {
+    setHint(otpHint, otpInput, 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้', 'error');
+    otpSendBtn.disabled = false;
+    otpSendBtn.textContent = 'ส่ง OTP';
+  }
+});
+
+otpInput.addEventListener('input', () => {
+  otpInput.value = otpInput.value.replace(/\D/g, '').slice(0, 6);
+});
+
+otpVerifyBtn.addEventListener('click', async () => {
+  const phone = phoneInput.value.replace(/\D/g, '');
+  const code = otpInput.value.replace(/\D/g, '');
+  if (code.length !== 6) return setHint(otpHint, otpInput, 'กรอกรหัส 6 หลัก', 'error');
+  otpVerifyBtn.disabled = true;
+  otpVerifyBtn.textContent = '...';
+  try {
+    const res = await fetch('/api/otp/verify', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone, code }),
+    });
+    const r = await res.json();
+    if (!res.ok) {
+      setHint(otpHint, otpInput, r.error || 'ยืนยันไม่สำเร็จ', 'error');
+      return;
+    }
+    // ยืนยันสำเร็จ
+    phoneToken = r.token;
+    setHint(phoneHint, phoneInput, 'ยืนยันเบอร์เรียบร้อยแล้ว', 'ok');
+    setHint(otpHint, otpInput, 'ยืนยันเบอร์สำเร็จ ✓', 'ok');
+    otpInput.disabled = true;
+    otpVerifyBtn.textContent = 'สำเร็จ ✓';
+    clearInterval(cooldownTimer);
+    cooldownTimer = null;
+    otpSendBtn.disabled = true;
+    otpSendBtn.textContent = 'ยืนยันแล้ว ✓';
+    return;
+  } catch {
+    setHint(otpHint, otpInput, 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้', 'error');
+  } finally {
+    if (!phoneToken) { otpVerifyBtn.disabled = false; otpVerifyBtn.textContent = 'ยืนยัน'; }
+  }
 });
 
 form.addEventListener('submit', async (e) => {
@@ -95,6 +209,10 @@ form.addEventListener('submit', async (e) => {
     return showMsg('เบอร์โทรต้องเป็นตัวเลข 10 หลักพอดี', 'error');
   }
   data.phone = phoneDigits;
+  if (!phoneToken) {
+    return showMsg('กรุณายืนยันเบอร์โทรด้วย OTP ก่อนลงทะเบียน (กดปุ่ม "ส่ง OTP")', 'error');
+  }
+  data.phone_token = phoneToken;
   if (!data.pdpa_consent) {
     return showMsg('กรุณายินยอมนโยบายความเป็นส่วนตัว (PDPA) ก่อนลงทะเบียน', 'error');
   }

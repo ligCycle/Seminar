@@ -62,7 +62,30 @@ function verifyRsvp(regCode, sig) {
   return crypto.timingSafeEqual(a, b);
 }
 
+// ---------- โทเคนยืนยันเบอร์ (หลังผ่าน OTP) เซ็นด้วย HMAC ----------
+// รูปแบบ: "<expiry>.<sig>" โดย sig = HMAC(phone:<phone>:<expiry>)
+// พิสูจน์ว่าเบอร์นี้ยืนยันแล้ว โดยไม่ต้องเก็บ session ฝั่ง server
+function phoneToken(phone, ttlMs = 30 * 60 * 1000) {
+  const expires = Date.now() + ttlMs;
+  const sig = crypto.createHmac('sha256', TOKEN_SECRET).update(`phone:${phone}:${expires}`).digest('hex');
+  return `${expires}.${sig}`;
+}
+
+function verifyPhoneToken(phone, token) {
+  if (!phone || !token || typeof token !== 'string') return false;
+  const dot = token.indexOf('.');
+  if (dot < 0) return false;
+  const expires = token.slice(0, dot);
+  const sig = token.slice(dot + 1);
+  if (!/^\d+$/.test(expires) || Date.now() > Number(expires)) return false;
+  const expected = crypto.createHmac('sha256', TOKEN_SECRET).update(`phone:${phone}:${expires}`).digest('hex');
+  const a = Buffer.from(sig);
+  const b = Buffer.from(expected);
+  if (a.length !== b.length) return false;
+  return crypto.timingSafeEqual(a, b);
+}
+
 module.exports = {
   issueToken, verifyToken, checkPassword, requireAdmin, COOKIE_NAME,
-  rsvpSig, verifyRsvp,
+  rsvpSig, verifyRsvp, phoneToken, verifyPhoneToken,
 };

@@ -61,9 +61,21 @@
             <div class="field-hint" id="emailHint"></div>
           </div>
           <div class="field">
-            <label>เบอร์โทรศัพท์ <span class="req">*</span> <small>(ตัวเลข 10 หลัก)</small></label>
-            <input type="tel" name="phone" inputmode="numeric" maxlength="10" pattern="[0-9]{10}" placeholder="0812345678" required />
+            <label>เบอร์โทรศัพท์ <span class="req">*</span> <small>(ยืนยันด้วย OTP)</small></label>
+            <div style="display:flex;gap:8px">
+              <input type="tel" name="phone" inputmode="numeric" maxlength="10" pattern="[0-9]{10}" placeholder="0812345678" style="flex:1" required />
+              <button type="button" class="btn secondary auto" id="otpSendBtn">ส่ง OTP</button>
+            </div>
             <div class="field-hint" id="phoneHint"></div>
+
+            <!-- ยืนยัน OTP (แสดงหลังกดส่ง) -->
+            <div id="otpGroup" style="display:none;margin-top:8px">
+              <div style="display:flex;gap:8px">
+                <input type="text" id="otpInput" inputmode="numeric" maxlength="6" placeholder="กรอกรหัส 6 หลักจาก SMS" style="flex:1" />
+                <button type="button" class="btn auto" id="otpVerifyBtn">ยืนยัน</button>
+              </div>
+              <div class="field-hint" id="otpHint"></div>
+            </div>
           </div>
         </div>
 

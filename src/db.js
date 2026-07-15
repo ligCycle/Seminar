@@ -120,7 +120,18 @@ async function initDb() {
     );
   `);
 
-  console.log('[db] ตาราง registrants + feedback พร้อมใช้งาน');
+  // ตาราง OTP ยืนยันเบอร์โทร (1 แถวต่อเบอร์ — แทนที่เมื่อขอใหม่)
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS phone_otp (
+      phone        TEXT PRIMARY KEY,
+      code_hash    TEXT NOT NULL,
+      expires_at   TIMESTAMPTZ NOT NULL,
+      attempts     INT NOT NULL DEFAULT 0,
+      last_sent_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `);
+
+  console.log('[db] ตาราง registrants + feedback + phone_otp พร้อมใช้งาน');
 }
 
 module.exports = { pool, initDb, genRegCode };

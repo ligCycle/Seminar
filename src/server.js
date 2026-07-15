@@ -1,13 +1,21 @@
 require('dotenv').config();
 
 const path = require('path');
+const crypto = require('crypto');
 const express = require('express');
 const cookieParser = require('cookie-parser');
 const QRCode = require('qrcode');
 
 const { pool, initDb, genRegCode } = require('./db');
-const { issueToken, checkPassword, requireAdmin, COOKIE_NAME, verifyRsvp } = require('./auth');
+const { issueToken, checkPassword, requireAdmin, COOKIE_NAME, verifyRsvp, phoneToken, verifyPhoneToken } = require('./auth');
 const { isConfigured, sendRsvpEmail, sendReminderEmail } = require('./mailer');
+const { smsDevMode, sendOtpSms } = require('./sms');
+
+// hash OTP ก่อนเก็บ (ไม่เก็บรหัสตรงๆ)
+const OTP_SALT = process.env.TOKEN_SECRET || 'otp-salt';
+function hashOtp(code) {
+  return crypto.createHmac('sha256', OTP_SALT).update(String(code)).digest('hex');
+}
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -62,6 +70,11 @@ app.post('/api/register', async (req, res) => {
         return res.status(409).json({ error: 'อีเมลนี้ถูกใช้ลงทะเบียนไปแล้ว' });
       }
       return res.status(409).json({ error: 'เบอร์โทรนี้ถูกใช้ลงทะเบียนไปแล้ว' });
+    }
+
+    // ต้องยืนยันเบอร์ด้วย OTP ก่อน (โทเคนได้จาก /api/otp/verify) — ตรวจหลัง dup เพื่อให้ error ซ้ำมาก่อน
+    if (!verifyPhoneToken(phone, (b.phone_token || '').toString())) {
+      return res.status(400).json({ error: 'กรุณายืนยันเบอร์โทรด้วย OTP ก่อนลงทะเบียน' });
     }
 
     // สุ่ม reg_code ให้ไม่ซ้ำ (retry สูงสุด 5 ครั้ง) — email/phone กันซ้ำด้วย pre-check ข้างบนแล้ว
@@ -138,6 +151,78 @@ app.get('/api/check', async (req, res) => {
   } catch (err) {
     console.error('[check] error', err);
     return res.status(500).json({ error: 'ตรวจสอบไม่สำเร็จ' });
+  }
+});
+
+// ---------- API: ส่ง OTP ไปยืนยันเบอร์ (public) ----------
+app.post('/api/otp/send', async (req, res) => {
+  try {
+    const phone = ((req.body && req.body.phone) || '').replace(/\D/g, '');
+    if (!/^\d{10}$/.test(phone)) {
+      return res.status(400).json({ error: 'เบอร์โทรต้องเป็นตัวเลข 10 หลักพอดี' });
+    }
+    // เบอร์นี้ถูกใช้ลงทะเบียนไปแล้วหรือยัง
+    const dup = await pool.query('SELECT 1 FROM registrants WHERE phone = $1 LIMIT 1', [phone]);
+    if (dup.rows.length > 0) {
+      return res.status(409).json({ error: 'เบอร์นี้ถูกใช้ลงทะเบียนไปแล้ว' });
+    }
+    // กันสแปม — ขอรหัสใหม่ได้ทุก 60 วินาที
+    const ex = await pool.query('SELECT last_sent_at FROM phone_otp WHERE phone = $1', [phone]);
+    if (ex.rows.length > 0) {
+      const since = Date.now() - new Date(ex.rows[0].last_sent_at).getTime();
+      if (since < 60000) {
+        return res.status(429).json({ error: `ขอรหัสใหม่ได้ในอีก ${Math.ceil((60000 - since) / 1000)} วินาที` });
+      }
+    }
+    const code = String(Math.floor(100000 + Math.random() * 900000)); // 6 หลัก
+    const hash = hashOtp(code);
+    const expires = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+    // 1 แถวต่อเบอร์ — ลบเดิมแล้วใส่ใหม่ (ทำงานได้ทั้ง pg-mem และ Postgres)
+    await pool.query('DELETE FROM phone_otp WHERE phone = $1', [phone]);
+    await pool.query(
+      'INSERT INTO phone_otp (phone, code_hash, expires_at, attempts, last_sent_at) VALUES ($1,$2,$3,0,now())',
+      [phone, hash, expires]
+    );
+
+    const sent = await sendOtpSms(phone, code);
+    const out = { ok: true, dev: !!sent.dev };
+    if (sent.dev) out.devCode = code; // dev-mode เท่านั้น: โชว์รหัสให้ทดสอบ
+    return res.json(out);
+  } catch (err) {
+    console.error('[otp/send] error', err);
+    return res.status(500).json({ error: 'ส่ง OTP ไม่สำเร็จ: ' + err.message });
+  }
+});
+
+// ---------- API: ยืนยัน OTP (public) — สำเร็จได้ token ไว้แนบตอนลงทะเบียน ----------
+app.post('/api/otp/verify', async (req, res) => {
+  try {
+    const phone = ((req.body && req.body.phone) || '').replace(/\D/g, '');
+    const code = ((req.body && req.body.code) || '').replace(/\D/g, '');
+    if (!/^\d{10}$/.test(phone) || !code) {
+      return res.status(400).json({ error: 'ข้อมูลไม่ครบ' });
+    }
+    const r = await pool.query('SELECT code_hash, expires_at, attempts FROM phone_otp WHERE phone = $1', [phone]);
+    if (r.rows.length === 0) {
+      return res.status(400).json({ error: 'ยังไม่ได้ขอรหัส หรือรหัสหมดอายุ — กรุณาขอรหัสใหม่' });
+    }
+    const o = r.rows[0];
+    if (Date.now() > new Date(o.expires_at).getTime()) {
+      await pool.query('DELETE FROM phone_otp WHERE phone = $1', [phone]);
+      return res.status(400).json({ error: 'รหัสหมดอายุ — กรุณาขอรหัสใหม่' });
+    }
+    if (o.attempts >= 5) {
+      return res.status(400).json({ error: 'ใส่รหัสผิดเกินกำหนด — กรุณาขอรหัสใหม่' });
+    }
+    if (hashOtp(code) !== o.code_hash) {
+      await pool.query('UPDATE phone_otp SET attempts = attempts + 1 WHERE phone = $1', [phone]);
+      return res.status(400).json({ error: 'รหัส OTP ไม่ถูกต้อง' });
+    }
+    await pool.query('DELETE FROM phone_otp WHERE phone = $1', [phone]);
+    return res.json({ ok: true, token: phoneToken(phone) });
+  } catch (err) {
+    console.error('[otp/verify] error', err);
+    return res.status(500).json({ error: 'ยืนยัน OTP ไม่สำเร็จ' });
   }
 });
 
