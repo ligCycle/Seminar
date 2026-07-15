@@ -59,15 +59,21 @@ HTML/CSS/JS ธรรมดา + Node.js/Express + PostgreSQL (พร้อม d
 > ตั้ง `MAIL_DRYRUN=true` เพื่อทดสอบโดยไม่ส่งจริง (ระบบจะ log แทน)
 > ถ้ามีทั้ง Brevo และ Gmail ระบบจะใช้ Brevo ก่อน
 
-## ตั้งค่า SMS OTP ยืนยันเบอร์ (Twilio)
+## ตั้งค่า SMS OTP ยืนยันเบอร์
 ผู้ลงทะเบียนต้องยืนยันเบอร์ด้วย OTP ก่อนลงทะเบียน
-- **ไม่ตั้งค่า** → dev-mode: ระบบโชว์รหัส OTP บนจอ/log (ไม่ส่ง SMS จริง) — ใช้ทดสอบฟรี
-- **ตั้งค่า Twilio** → ส่ง SMS จริง:
-  1. สมัคร <https://www.twilio.com> (trial ฟรี) → ยืนยันเบอร์ปลายทางใน console (trial ส่งได้เฉพาะเบอร์ที่ verify)
-  2. เอา **Account SID**, **Auth Token**, และเบอร์ Twilio (**From**) มาตั้ง Variables:
-     - `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM`
+- **ไม่ตั้ง provider** → dev-mode: ระบบโชว์รหัส OTP บนจอ/log (ไม่ส่ง SMS จริง) — ใช้ทดสอบฟรี
 
-> Twilio trial ส่งได้เฉพาะเบอร์ที่ยืนยันไว้ (เหมาะ demo หาเบอร์ตัวเอง) — ใช้งานจริงทุกเบอร์ต้องอัปเกรด/หรือใช้ SMS gateway ไทย
+### แนะนำสำหรับเบอร์ไทย: ThaiBulkSMS (ส่งไทยได้จริง)
+1. สมัคร <https://www.thaibulksms.com> → รับเครดิตทดลองฟรี
+2. ขอ **Sender Name** + ยืนยันตัวตนออนไลน์
+3. หน้า **API** → เอา **API Key** + **API Secret**
+4. ตั้ง Variables บน Render:
+   - `THAIBULK_API_KEY`, `THAIBULK_API_SECRET`, `THAIBULK_SENDER` (ชื่อผู้ส่งที่อนุมัติ)
+
+### ทางเลือก: Twilio (มักส่งไทยไม่ได้บน trial)
+`TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM`
+
+> ลำดับการเลือก: ThaiBulkSMS → Twilio → dev-mode
 
 ## หมายเหตุด้านความปลอดภัย / PDPA
 - ต้องแทน "ลิงก์นโยบายความเป็นส่วนตัว" ในฟอร์ม (`public/index.html`) ด้วยลิงก์จริงของผู้จัด
