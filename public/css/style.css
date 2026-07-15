@@ -283,7 +283,30 @@ tbody tr:hover { background: var(--card-2); }
 .links a:hover { text-decoration: underline; }
 
 /* ---------- checkin ---------- */
-#reader { border-radius: var(--radius); overflow: hidden; margin-bottom: 16px; }
+.scanner { position: relative; margin-bottom: 16px; }
+#reader { border-radius: var(--radius); overflow: hidden; }
+
+/* ผลลัพธ์เด้งทับบนกล้อง ตรงที่ผู้ใช้มองอยู่ */
+.scan-overlay {
+  position: absolute;
+  inset: 0;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  text-align: center;
+  border-radius: var(--radius);
+  z-index: 5;
+  color: #fff;
+  padding: 16px;
+}
+.scan-overlay.show { display: flex; animation: fadeIn 0.12s ease; }
+.scan-overlay .icon { font-size: 4rem; line-height: 1; }
+.scan-overlay .name { font-size: 1.6rem; font-weight: 800; }
+.scan-overlay.success { background: rgba(16, 66, 34, 0.9); }
+.scan-overlay.already { background: rgba(74, 55, 12, 0.9); }
+.scan-overlay.not_found { background: rgba(74, 22, 22, 0.9); }
 .result-box { text-align: center; padding: 24px; border-radius: var(--radius); margin-bottom: 16px; display: none; }
 .result-box.show { display: block; }
 .result-box.success { background: rgba(74, 222, 128, 0.14); border: 1px solid var(--success); }

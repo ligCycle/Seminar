@@ -6,6 +6,31 @@ const manualCode = document.getElementById('manualCode');
 let busy = false;
 let lastCode = '';
 let lastTime = 0;
+let hideTimer = null;
+
+// เสียงบี๊บแจ้งผล (ไม่ต้องมีไฟล์เสียง — ใช้ Web Audio)
+let audioCtx = null;
+function beep(status) {
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const tones = status === 'success' ? [880, 1245] : status === 'already' ? [620] : [200];
+    tones.forEach((freq, i) => {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = status === 'not_found' ? 'square' : 'sine';
+      osc.frequency.value = freq;
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      const t = audioCtx.currentTime + i * 0.16;
+      gain.gain.setValueAtTime(0.0001, t);
+      gain.gain.exponentialRampToValueAtTime(0.3, t + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.15);
+      osc.start(t);
+      osc.stop(t + 0.16);
+    });
+  } catch { /* เบราว์เซอร์ไม่อนุญาตเสียง — ข้ามไป */ }
+}
 
 function showResult(status, name, extra) {
   const map = {
@@ -14,12 +39,16 @@ function showResult(status, name, extra) {
     not_found: { icon: '❌', title: 'ไม่พบข้อมูล' },
   };
   const m = map[status] || map.not_found;
-  resultBox.className = 'result-box show ' + status;
+  resultBox.className = 'scan-overlay show ' + status;
   resultBox.innerHTML = `
     <div class="icon">${m.icon}</div>
     <div class="name">${name ? escapeHtml(name) : ''}</div>
     <div>${m.title}${extra ? ' • ' + extra : ''}</div>
   `;
+  beep(status);
+  // ซ่อนอัตโนมัติหลัง 2.6 วิ เพื่อให้พร้อมสแกนคนต่อไป
+  clearTimeout(hideTimer);
+  hideTimer = setTimeout(() => { resultBox.className = 'scan-overlay'; }, 2600);
 }
 
 function escapeHtml(s) {
